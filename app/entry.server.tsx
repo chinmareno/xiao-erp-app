@@ -11,6 +11,10 @@ import { createReadableStreamFromReadable } from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
+import { createInstance } from "i18next";
+import { I18nextProvider, initReactI18next } from "react-i18next";
+import i18next from "./i18next.server";
+import i18n from "./i18n";
 
 const ABORT_DELAY = 5_000;
 
@@ -89,20 +93,33 @@ function handleBotRequest(
   });
 }
 
-function handleBrowserRequest(
+async function handleBrowserRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext
 ) {
+  let shellRendered = false;
+
+  let instance = createInstance();
+  let lng = await i18next.getLocale(request);
+
+  await instance
+    .use(initReactI18next) // Tell our instance to use react-i18next
+    .init({
+      ...i18n,
+      lng, // The locale we detected above
+    });
+
   return new Promise((resolve, reject) => {
-    let shellRendered = false;
     const { pipe, abort } = renderToPipeableStream(
-      <RemixServer
-        context={remixContext}
-        url={request.url}
-        abortDelay={ABORT_DELAY}
-      />,
+      <I18nextProvider i18n={instance}>
+        <RemixServer
+          context={remixContext}
+          url={request.url}
+          abortDelay={ABORT_DELAY}
+        />
+      </I18nextProvider>,
       {
         onShellReady() {
           shellRendered = true;

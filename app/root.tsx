@@ -4,10 +4,13 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
-import type { LinksFunction } from "@remix-run/node";
-
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { data } from "@remix-run/node";
 import "./tailwind.css";
+import i18next from "./i18next.server";
+import { useChangeLanguage } from "remix-i18next/react";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -22,9 +25,26 @@ export const links: LinksFunction = () => [
   },
 ];
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const locale = await i18next.getLocale(request);
+  return data({ locale });
+}
+
+export const handle = {
+  // In the handle export, we can add a i18n key with namespaces our route
+  // will need to load. This key can be a single string or an array of strings.
+  // TIP: In most cases, you should set this to your defaultNS from your i18n config
+  // or if you did not set one, set it to the i18next default namespace "translation"
+  i18n: "translation",
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { locale } = useLoaderData<typeof loader>();
+
+  useChangeLanguage(locale);
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
