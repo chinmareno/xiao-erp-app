@@ -101,8 +101,8 @@ async function handleBrowserRequest(
 ) {
   let shellRendered = false;
 
-  let instance = createInstance();
-  let lng = await i18next.getLocale(request);
+  const instance = createInstance();
+  const lng = await i18next.getLocale(request);
 
   await instance
     .use(initReactI18next) // Tell our instance to use react-i18next
@@ -115,6 +115,7 @@ async function handleBrowserRequest(
     const { pipe, abort } = renderToPipeableStream(
       <I18nextProvider i18n={instance}>
         <RemixServer
+          i18nIsDynamicList
           context={remixContext}
           url={request.url}
           abortDelay={ABORT_DELAY}

@@ -16,6 +16,7 @@ export const signup = {
   signupButton: "Sign Up",
   separator: "or sign up with",
   googleButton: "Continue with Google",
+  appleButton: "Continue with Apple",
   haveAccount: "Already have an account?",
   loginLink: "Login",
   accountCreated: "Account created successfully!",

@@ -1,7 +1,7 @@
 import localeResources from "public/locales";
 
 export default {
-  supportedLngs: ["en"],
+  supportedLngs: ["en", "zh", "id"],
   fallbackLng: "en",
   resources: localeResources,
 };

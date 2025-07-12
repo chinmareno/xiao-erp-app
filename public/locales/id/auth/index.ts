@@ -5,9 +5,9 @@ const auth = {
   login: login,
   signup: signup,
   footer: {
-    tAndC: "By clicking continue, you agree to our",
-    termsOfService: "Terms of Service",
-    privacyPolicy: "Privacy Policy",
+    tAndC: "Dengan melanjutkan, kamu menyetujui",
+    termsOfService: "Ketentuan Layanan",
+    privacyPolicy: "Kebijakan Privasi",
   },
 };
 
