@@ -1,0 +1,20 @@
+export const login = {
+  title: "欢迎回来",
+  desc: "登录你的账户",
+  emailLabel: "邮箱",
+  emailPlaceholder: "请输入你的邮箱",
+  passwordLabel: "密码",
+  passwordPlaceholder: "请输入你的密码",
+  loginButton: "登录",
+  separator: "或使用以下方式继续",
+  googleButton: "使用 Google 继续",
+  noAccount: "还没有账户？",
+  signUpLink: "注册",
+  error: {
+    invalidEmail: "无效的邮箱地址",
+    invalidPassword: "密码至少需要 8 个字符",
+    invalidCredential: "邮箱或密码不正确",
+    invalidInput: "请输入有效的邮箱和密码",
+    uncaughtError: "发生未知错误，请稍后再试。",
+  },
+};

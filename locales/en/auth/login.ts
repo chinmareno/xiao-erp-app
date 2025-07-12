@@ -1,0 +1,20 @@
+export const login = {
+  title: "Welcome Back",
+  desc: "Login to your account",
+  emailLabel: "Email",
+  emailPlaceholder: "Enter your email",
+  passwordLabel: "Password",
+  passwordPlaceholder: "Enter your password",
+  loginButton: "Login",
+  separator: "or continue with",
+  googleButton: "Continue with Google",
+  noAccount: "don't have an account?",
+  signUpLink: "SIgn up",
+  error: {
+    invalidEmail: "Invalid email address",
+    invalidPassword: "Password must be at least 8 characters",
+    invalidCredential: "Incorrect email or password",
+    invalidInput: "Please enter a valid email and password",
+    uncaughtError: "An unexpected error occurred. Please try again later.",
+  },
+};

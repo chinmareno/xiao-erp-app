@@ -1,4 +1,4 @@
-import localeResources from "public/locales";
+import localeResources from "locales";
 
 export default {
   supportedLngs: ["en", "zh", "id"],

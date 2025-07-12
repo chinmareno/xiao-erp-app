@@ -1,5 +1,6 @@
 import { Outlet } from "@remix-run/react";
-const _auth = () => {
+
+const AuthLayout = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 pb-7">
       <Outlet />
@@ -7,4 +8,4 @@ const _auth = () => {
   );
 };
 
-export default _auth;
+export default AuthLayout;

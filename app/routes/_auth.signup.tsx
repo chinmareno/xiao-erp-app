@@ -1,15 +1,7 @@
-import { ActionFunctionArgs } from "@remix-run/node";
-import {
-  ClientActionFunctionArgs,
-  Form,
-  Link,
-  redirect,
-  useActionData,
-} from "@remix-run/react";
-import { Check, Dot } from "lucide-react";
+import { Form, Link, useNavigate } from "@remix-run/react";
+import { Check, Dot, Eye, EyeClosed } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FaApple } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
@@ -22,6 +14,7 @@ import {
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { authClient } from "~/lib/auth-client";
 
 const signupSchema = z
   .object({
@@ -38,37 +31,59 @@ const signupSchema = z
     path: ["confirmPassword"],
   });
 
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const rawFormData = Object.fromEntries(formData);
-  const result = signupSchema.safeParse(rawFormData);
-  if (result.success) {
-    return redirect("/dashboard");
-  } else {
-    return result.error.format();
-  }
-}
-
-export async function clientAction({
-  request,
-  serverAction,
-}: ClientActionFunctionArgs) {
-  const clonedRequest = request.clone();
-  const formData = await clonedRequest.formData();
-  const rawFormData = Object.fromEntries(formData);
-  const result = signupSchema.safeParse(rawFormData);
-  if (result.success) {
-    return await serverAction();
-  } else {
-    return result.error.format();
-  }
-}
+type SignupError = {
+  email: boolean;
+  password: boolean;
+  confirmPassword: boolean;
+};
 
 export default function SignupForm() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordIsVisible, setPasswordIsVisible] = useState(false);
+  const [confirnPasswordIsVisible, setConfirmPasswordIsVisible] =
+    useState(false);
+
+  const [errors, setErrors] = useState<SignupError | null>(null);
+
   const { t } = useTranslation(["auth", "common"]);
-  const errors = useActionData<typeof action>();
+
+  const navigate = useNavigate();
+
+  const signup = async () => {
+    const result = signupSchema.safeParse({ email, password, confirmPassword });
+
+    if (result.success) {
+      setErrors(null);
+
+      const name = email.split("@")[0];
+
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
+
+      data ? navigate("/dashboard") : alert(error.message);
+    } else {
+      const { email, password, confirmPassword } = result.error.format();
+
+      return setErrors({
+        email: !!email,
+        password: !!password,
+        confirmPassword: !!confirmPassword,
+      });
+    }
+  };
+
+  const signupGoogle = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
+      errorCallbackURL: "/signup",
+    });
+  };
 
   return (
     <div className="min-w-[400px] min-h-[700px]">
@@ -80,16 +95,17 @@ export default function SignupForm() {
           <CardDescription>{t("signup.desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Form method="post" replace className="space-y-4">
+          <Form onSubmit={signup} className="space-y-4">
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
-                <Button variant="outline" className="w-full">
+                <Button
+                  onClick={signupGoogle}
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                >
                   <FcGoogle className="h-6 w-6 flex-shrink-0" />
                   {t("signup.googleButton")}
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <FaApple />
-                  {t("signup.appleButton")}
                 </Button>
               </div>
               <div className="relative text-center lg:text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -102,8 +118,9 @@ export default function SignupForm() {
                   <Label htmlFor="email">{t("signup.emailLabel")}</Label>
                   <Input
                     id="email"
-                    name="email"
                     type="text"
+                    onChange={(e) => setEmail(e.currentTarget.value)}
+                    value={email}
                     placeholder={t("signup.emailPlaceholder")}
                   />
                   {errors?.email && (
@@ -114,14 +131,25 @@ export default function SignupForm() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">{t("signup.passwordLabel")}</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    onChange={(e) => setPassword(e.currentTarget.value)}
-                    value={password}
-                    type="password"
-                    placeholder={t("signup.passwordPlaceholder")}
-                  />
+                  <div className="relative flex">
+                    <Input
+                      id="password"
+                      onChange={(e) => setPassword(e.currentTarget.value)}
+                      value={password}
+                      type={passwordIsVisible ? "text" : "password"}
+                      placeholder={t("signup.passwordPlaceholder")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPasswordIsVisible((prev) => !prev)}
+                    >
+                      {passwordIsVisible ? (
+                        <EyeClosed className="absolute h-5 w-5 right-2 self-center" />
+                      ) : (
+                        <Eye className="absolute h-5 w-5 right-2 self-center" />
+                      )}
+                    </button>
+                  </div>
                   {errors?.password && (
                     <p className="lg:text-sm text-red-600">
                       {t("signup.error.invalidPassword")}
@@ -171,17 +199,32 @@ export default function SignupForm() {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="password">
+                  <Label htmlFor="confirmPassword">
                     {t("signup.confirmPasswordLabel")}
                   </Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    onChange={(e) => setConfirmPassword(e.currentTarget.value)}
-                    value={confirmPassword}
-                    type="password"
-                    placeholder={t("signup.confirmPasswordLabel")}
-                  />
+                  <div className="relative flex">
+                    <Input
+                      id="confirmPassword"
+                      onChange={(e) =>
+                        setConfirmPassword(e.currentTarget.value)
+                      }
+                      value={confirmPassword}
+                      type={confirnPasswordIsVisible ? "text" : "password"}
+                      placeholder={t("signup.confirmPasswordLabel")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmPasswordIsVisible((prev) => !prev)
+                      }
+                    >
+                      {confirnPasswordIsVisible ? (
+                        <EyeClosed className="absolute h-5 w-5 right-2 self-center" />
+                      ) : (
+                        <Eye className="absolute h-5 w-5 right-2 self-center" />
+                      )}
+                    </button>
+                  </div>
                   {errors?.confirmPassword && password !== confirmPassword && (
                     <p className="lg:text-sm text-red-600">
                       {t("signup.error.invalidConfirmPassword")}
@@ -198,7 +241,8 @@ export default function SignupForm() {
               <div className="text-center text-muted-foreground text-sm">
                 {t("signup.haveAccount")}
                 <Link
-                  to={"#"}
+                  to="/login"
+                  prefetch="intent"
                   className="hover:underline  text-blue-600 hover:text-blue-800"
                 >
                   {t("signup.loginLink")}
