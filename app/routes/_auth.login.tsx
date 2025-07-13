@@ -1,7 +1,6 @@
-import { Form, Link, useNavigate } from "@remix-run/react";
+import { Form, Link, useNavigate, useRouteLoaderData } from "@remix-run/react";
 import { Eye, EyeClosed } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { FcGoogle } from "react-icons/fc";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
@@ -15,6 +14,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { authClient } from "~/lib/auth-client";
+import type { loader as localesLoader } from "../root";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -32,7 +33,8 @@ export default function LoginForm() {
   const [passwordIsVisible, setPasswordIsVisible] = useState(false);
   const [errors, setErrors] = useState<LoginError | null>(null);
 
-  const { t } = useTranslation(["auth", "common"]);
+  const t = useRouteLoaderData<typeof localesLoader>("root");
+  const scopedT = t?.auth;
 
   const navigate = useNavigate();
 
@@ -42,12 +44,18 @@ export default function LoginForm() {
     if (result.success) {
       setErrors(null);
 
-      const { data, error } = await authClient.signIn.email({
+      await authClient.signIn.email({
         email,
         password,
+        fetchOptions: {
+          onSuccess: () => {
+            navigate("/dashboard");
+          },
+          onError: (ctx) => {
+            toast.error(ctx.error.message);
+          },
+        },
       });
-
-      data ? navigate("/dashboard") : alert(error.message);
     } else {
       const { email, password } = result.error.format();
 
@@ -61,19 +69,25 @@ export default function LoginForm() {
   const signupGoogle = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
-      errorCallbackURL: "/signup",
+      disableRedirect: true,
+      fetchOptions: {
+        onSuccess: () => {
+          navigate("/dashboard");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
     });
   };
-
   return (
     <div className="min-w-[400px] min-h-[700px]">
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="lg:text-2xl font-bold">
-            {t("login.title")}
+            {scopedT?.login.title}
           </CardTitle>
-          <CardDescription>{t("login.desc")}</CardDescription>
+          <CardDescription>{scopedT?.login.desc}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form replace onSubmit={login} className="space-y-4">
@@ -86,39 +100,41 @@ export default function LoginForm() {
                   className="w-full"
                 >
                   <FcGoogle className="h-6 w-6 flex-shrink-0" />
-                  {t("login.googleButton")}
+                  {scopedT?.login.googleButton}
                 </Button>
               </div>
               <div className="relative text-center lg:text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                 <span className="relative z-10 bg-background px-2 text-muted-foreground">
-                  {t("login.separator")}
+                  {scopedT?.login.separator}
                 </span>
               </div>
               <div className="grid gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t("login.emailLabel")}</Label>
+                  <Label htmlFor="email">{scopedT?.login.emailLabel}</Label>
                   <Input
                     id="email"
                     onChange={(e) => setEmail(e.currentTarget.value)}
                     value={email}
                     type="text"
-                    placeholder={t("login.emailPlaceholder")}
+                    placeholder={scopedT?.login.emailPlaceholder}
                   />
                   {errors?.email && (
                     <p className="text-sm text-red-600">
-                      {t("login.error.invalidEmail")}
+                      {scopedT?.login.error.invalidEmail}
                     </p>
                   )}
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="password">{t("login.passwordLabel")}</Label>
+                  <Label htmlFor="password">
+                    {scopedT?.login.passwordLabel}
+                  </Label>
                   <div className="flex relative">
                     <Input
                       id="password"
                       onChange={(e) => setPassword(e.currentTarget.value)}
                       value={password}
                       type={passwordIsVisible ? "text" : "password"}
-                      placeholder={t("login.passwordPlaceholder")}
+                      placeholder={scopedT?.login.passwordPlaceholder}
                     />
                     <button
                       type="button"
@@ -133,7 +149,7 @@ export default function LoginForm() {
                   </div>
                   {errors?.password && (
                     <p className="lg:text-sm text-red-600">
-                      {t("login.error.invalidPassword")}
+                      {scopedT?.login.error.invalidPassword}
                     </p>
                   )}
                 </div>
@@ -142,17 +158,17 @@ export default function LoginForm() {
                   type="submit"
                   className="w-full bg-blue-700 hover:bg-blue-900"
                 >
-                  {t("login.loginButton")}
+                  {scopedT?.login.loginButton}
                 </Button>
               </div>
               <div className="text-center text-muted-foreground text-sm">
-                {t("login.noAccount")}
+                {scopedT?.login.noAccount}
                 <Link
                   to="/signup"
                   prefetch="intent"
                   className="hover:underline  text-blue-600 hover:text-blue-800"
                 >
-                  {t("login.signUpLink")}
+                  {scopedT?.login.signUpLink}
                 </Link>
               </div>
             </div>
@@ -160,19 +176,19 @@ export default function LoginForm() {
         </CardContent>
       </Card>
       <div className=" text-xs text-center mt-1.5 text-muted-foreground">
-        {t("auth:footer.tAndC")}{" "}
+        {scopedT?.footer.tAndC}{" "}
         <Link
           className="underline text-blue-600 underline-offset-4 hover:text-blue-800"
           to={"#"}
         >
-          {t("auth:footer.termsOfService")}
+          {scopedT?.footer.termsOfService}
         </Link>{" "}
-        {t("common:and")}{" "}
+        {t?.common.and}{" "}
         <Link
           className="underline text-blue-600 underline-offset-4 hover:text-blue-800"
           to={"#"}
         >
-          {t("auth:footer.privacyPolicy")}
+          {scopedT?.footer.privacyPolicy}
         </Link>
       </div>
     </div>

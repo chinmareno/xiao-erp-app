@@ -1,4 +1,4 @@
-import { Locale } from "../index";
+import { Locale } from "../locales.server";
 import auth from "./auth";
 import common from "./common";
 

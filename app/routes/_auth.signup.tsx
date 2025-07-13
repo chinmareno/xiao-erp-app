@@ -1,7 +1,6 @@
-import { Form, Link, useNavigate } from "@remix-run/react";
+import { Form, Link, useNavigate, useRouteLoaderData } from "@remix-run/react";
 import { Check, Dot, Eye, EyeClosed } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { FcGoogle } from "react-icons/fc";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
@@ -15,6 +14,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { authClient } from "~/lib/auth-client";
+import type { loader as localesLoader } from "../root";
+import { toast } from "sonner";
 
 const signupSchema = z
   .object({
@@ -44,10 +45,10 @@ export default function SignupForm() {
   const [passwordIsVisible, setPasswordIsVisible] = useState(false);
   const [confirnPasswordIsVisible, setConfirmPasswordIsVisible] =
     useState(false);
-
   const [errors, setErrors] = useState<SignupError | null>(null);
 
-  const { t } = useTranslation(["auth", "common"]);
+  const t = useRouteLoaderData<typeof localesLoader>("root");
+  const scopedT = t?.auth;
 
   const navigate = useNavigate();
 
@@ -59,13 +60,19 @@ export default function SignupForm() {
 
       const name = email.split("@")[0];
 
-      const { data, error } = await authClient.signUp.email({
+      await authClient.signUp.email({
         email,
         password,
         name,
+        fetchOptions: {
+          onSuccess: () => {
+            navigate("/dashboard");
+          },
+          onError: (ctx) => {
+            toast.error(ctx.error.message);
+          },
+        },
       });
-
-      data ? navigate("/dashboard") : alert(error.message);
     } else {
       const { email, password, confirmPassword } = result.error.format();
 
@@ -80,8 +87,15 @@ export default function SignupForm() {
   const signupGoogle = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
-      errorCallbackURL: "/signup",
+      disableRedirect: true,
+      fetchOptions: {
+        onSuccess: () => {
+          navigate("/dashboard");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
     });
   };
 
@@ -90,9 +104,9 @@ export default function SignupForm() {
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="lg:text-2xl font-bold">
-            {t("signup.title")}
+            {scopedT?.signup.title}
           </CardTitle>
-          <CardDescription>{t("signup.desc")}</CardDescription>
+          <CardDescription>{scopedT?.signup.desc}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form onSubmit={signup} className="space-y-4">
@@ -105,39 +119,41 @@ export default function SignupForm() {
                   className="w-full"
                 >
                   <FcGoogle className="h-6 w-6 flex-shrink-0" />
-                  {t("signup.googleButton")}
+                  {scopedT?.signup.googleButton}
                 </Button>
               </div>
               <div className="relative text-center lg:text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                 <span className="relative z-10 bg-background px-2 text-muted-foreground">
-                  {t("signup.separator")}
+                  {scopedT?.signup.separator}
                 </span>
               </div>
               <div className="grid gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t("signup.emailLabel")}</Label>
+                  <Label htmlFor="email">{scopedT?.signup.emailLabel}</Label>
                   <Input
                     id="email"
                     type="text"
                     onChange={(e) => setEmail(e.currentTarget.value)}
                     value={email}
-                    placeholder={t("signup.emailPlaceholder")}
+                    placeholder={scopedT?.signup.emailPlaceholder}
                   />
                   {errors?.email && (
                     <p className="text-sm text-red-600">
-                      {t("signup.error.invalidEmail")}
+                      {scopedT?.signup.error.invalidEmail}
                     </p>
                   )}
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="password">{t("signup.passwordLabel")}</Label>
+                  <Label htmlFor="password">
+                    {scopedT?.signup.passwordLabel}
+                  </Label>
                   <div className="relative flex">
                     <Input
                       id="password"
                       onChange={(e) => setPassword(e.currentTarget.value)}
                       value={password}
                       type={passwordIsVisible ? "text" : "password"}
-                      placeholder={t("signup.passwordPlaceholder")}
+                      placeholder={scopedT?.signup.passwordPlaceholder}
                     />
                     <button
                       type="button"
@@ -152,7 +168,7 @@ export default function SignupForm() {
                   </div>
                   {errors?.password && (
                     <p className="lg:text-sm text-red-600">
-                      {t("signup.error.invalidPassword")}
+                      {scopedT?.signup.error.invalidPassword}
                     </p>
                   )}
                   <div className="space-y-1">
@@ -163,7 +179,7 @@ export default function SignupForm() {
                         <Dot className="lg:h-4 lg:w-4" />
                       )}
                       <p className="lg:text-sm">
-                        {t("signup.passwordRequirement.oneLowerCase")}
+                        {scopedT?.signup.passwordRequirement.oneLowerCase}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -173,7 +189,7 @@ export default function SignupForm() {
                         <Dot className="lg:h-4 lg:w-4" />
                       )}
                       <p className="text-sm">
-                        {t("signup.passwordRequirement.oneUpperCase")}
+                        {scopedT?.signup.passwordRequirement.oneUpperCase}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -183,7 +199,7 @@ export default function SignupForm() {
                         <Dot className="lg:h-4 lg:w-4" />
                       )}
                       <p className="text-sm">
-                        {t("signup.passwordRequirement.includeNumber")}
+                        {scopedT?.signup.passwordRequirement.includeNumber}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -193,14 +209,14 @@ export default function SignupForm() {
                         <Dot className="lg:h-4 lg:w-4" />
                       )}
                       <p className="lg:text-sm">
-                        {t("signup.passwordRequirement.minChar")}
+                        {scopedT?.signup.passwordRequirement.minChar}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="confirmPassword">
-                    {t("signup.confirmPasswordLabel")}
+                    {scopedT?.signup.confirmPasswordLabel}
                   </Label>
                   <div className="relative flex">
                     <Input
@@ -210,7 +226,7 @@ export default function SignupForm() {
                       }
                       value={confirmPassword}
                       type={confirnPasswordIsVisible ? "text" : "password"}
-                      placeholder={t("signup.confirmPasswordLabel")}
+                      placeholder={scopedT?.signup.confirmPasswordLabel}
                     />
                     <button
                       type="button"
@@ -227,7 +243,7 @@ export default function SignupForm() {
                   </div>
                   {errors?.confirmPassword && password !== confirmPassword && (
                     <p className="lg:text-sm text-red-600">
-                      {t("signup.error.invalidConfirmPassword")}
+                      {scopedT?.signup.error.invalidConfirmPassword}
                     </p>
                   )}
                 </div>
@@ -235,17 +251,17 @@ export default function SignupForm() {
                   type="submit"
                   className="w-full bg-blue-700 hover:bg-blue-900"
                 >
-                  {t("signup.signupButton")}
+                  {scopedT?.signup.signupButton}
                 </Button>
               </div>
               <div className="text-center text-muted-foreground text-sm">
-                {t("signup.haveAccount")}
+                {scopedT?.signup.haveAccount}
                 <Link
                   to="/login"
                   prefetch="intent"
                   className="hover:underline  text-blue-600 hover:text-blue-800"
                 >
-                  {t("signup.loginLink")}
+                  {scopedT?.signup.loginLink}
                 </Link>
               </div>
             </div>
@@ -253,19 +269,19 @@ export default function SignupForm() {
         </CardContent>
       </Card>
       <div className=" text-xs text-center mt-1.5 text-muted-foreground">
-        {t("auth:footer.tAndC")}{" "}
+        {scopedT?.footer.tAndC}
         <Link
           className="underline text-blue-600 underline-offset-4 hover:text-blue-800"
           to={"#"}
         >
-          {t("auth:footer.termsOfService")}
+          {scopedT?.footer.termsOfService}
         </Link>{" "}
-        {t("common:and")}{" "}
+        {t?.common.and}{" "}
         <Link
           className="underline text-blue-600 underline-offset-4 hover:text-blue-800"
           to={"#"}
         >
-          {t("auth:footer.privacyPolicy")}
+          {t?.auth.footer.privacyPolicy}
         </Link>
       </div>
     </div>

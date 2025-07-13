@@ -4,13 +4,13 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
 } from "@remix-run/react";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { type LinksFunction, LoaderFunctionArgs, data } from "@remix-run/node";
+
 import "./tailwind.css";
-import i18next from "./i18next.server";
-import { useChangeLanguage } from "remix-i18next/react";
-import { data } from "@remix-run/node";
+
+import localeResources from "../locales/locales.server";
+import { Toaster } from "./components/ui/sonner";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,18 +25,15 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const locale = await i18next.getLocale(request);
-  return data({ locale });
+export async function loader({}: LoaderFunctionArgs) {
+  return data(localeResources["en"]);
 }
 
+export type localesLoader = typeof loader;
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { locale } = useLoaderData<typeof loader>();
-  useChangeLanguage(locale);
-
   return (
-    <html lang={locale}>
-      <head lang={locale}>
+    <html lang="en">
+      <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
@@ -44,6 +41,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Toaster richColors />
         <ScrollRestoration />
         <Scripts />
       </body>
