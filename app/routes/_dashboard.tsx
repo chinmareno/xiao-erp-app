@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "@remix-run/react";
+import { Outlet, redirect, useLoaderData, useLocation } from "@remix-run/react";
 import { SideNavbar } from "~/components/ui/side-navbar";
 import { Separator } from "~/components/ui/separator";
 import {
@@ -12,10 +12,22 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
+import { auth } from "~/lib/auth";
+import { LoaderFunctionArgs } from "@remix-run/node";
 
-export default function DashboardLayout() {
+export async function loader({ request }: LoaderFunctionArgs) {
+  const isAuth = await auth.api.getSession({
+    headers: request.headers,
+  });
+  if (!isAuth) return redirect("/login");
+
+  return null;
+}
+
+export default function DashboardLayout({}) {
   const { pathname } = useLocation();
   const segments = pathname.split("/");
+
   return (
     <SidebarProvider>
       <SideNavbar />
@@ -41,10 +53,9 @@ export default function DashboardLayout() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+          <div>
             <Outlet />
           </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
         </div>
       </SidebarInset>
     </SidebarProvider>

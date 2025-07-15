@@ -58,6 +58,9 @@ export default function SignupForm() {
     if (result.success) {
       setErrors(null);
 
+      const isGmail = email.split("@")[1].toLocaleLowerCase() === "gmail.com";
+      if (isGmail) return toast.error("Sign up with Google instead");
+
       const name = email.split("@")[0];
 
       await authClient.signUp.email({
@@ -66,7 +69,7 @@ export default function SignupForm() {
         name,
         fetchOptions: {
           onSuccess: () => {
-            navigate("/dashboard");
+            navigate("/");
           },
           onError: (ctx) => {
             toast.error(ctx.error.message);
@@ -87,15 +90,8 @@ export default function SignupForm() {
   const signupGoogle = async () => {
     await authClient.signIn.social({
       provider: "google",
-      disableRedirect: true,
-      fetchOptions: {
-        onSuccess: () => {
-          navigate("/dashboard");
-        },
-        onError: (ctx) => {
-          toast.error(ctx.error.message);
-        },
-      },
+      callbackURL: "/",
+      errorCallbackURL: "/signup",
     });
   };
 

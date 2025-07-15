@@ -49,7 +49,7 @@ export default function LoginForm() {
         password,
         fetchOptions: {
           onSuccess: () => {
-            navigate("/dashboard");
+            navigate("/");
           },
           onError: (ctx) => {
             toast.error(ctx.error.message);
@@ -69,15 +69,8 @@ export default function LoginForm() {
   const signupGoogle = async () => {
     await authClient.signIn.social({
       provider: "google",
-      disableRedirect: true,
-      fetchOptions: {
-        onSuccess: () => {
-          navigate("/dashboard");
-        },
-        onError: (ctx) => {
-          toast.error(ctx.error.message);
-        },
-      },
+      callbackURL: "/",
+      errorCallbackURL: "/login",
     });
   };
   return (
