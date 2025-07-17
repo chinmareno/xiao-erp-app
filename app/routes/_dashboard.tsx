@@ -1,4 +1,4 @@
-import { Outlet, redirect, useLoaderData, useLocation } from "@remix-run/react";
+import { Outlet, redirect, useLocation } from "@remix-run/react";
 import { SideNavbar } from "~/components/ui/side-navbar";
 import { Separator } from "~/components/ui/separator";
 import {
@@ -12,7 +12,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
-import { auth } from "~/lib/auth";
+import { auth } from "~/lib/auth.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export default function DashboardLayout({}) {
+export default function DashboardLayout() {
   const { pathname } = useLocation();
   const segments = pathname.split("/");
 

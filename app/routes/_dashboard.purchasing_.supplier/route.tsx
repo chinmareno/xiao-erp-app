@@ -1,11 +1,9 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
 import { columns, Supplier } from "./columns";
 import { DataTable } from "./data-table";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Plus } from "lucide-react";
-import { Button } from "~/components/ui/button";
 
-export async function loader({}: LoaderFunctionArgs): Promise<Supplier[]> {
+export async function loader(): Promise<Supplier[]> {
   // Fetch data from your API here.
   const result = [
     {

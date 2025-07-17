@@ -73,6 +73,7 @@ module.exports = {
       ],
       rules: {
         "import/no-named-as-default-member": "off",
+        "react/prop-types": "off",
       },
     },
 

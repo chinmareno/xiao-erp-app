@@ -5,7 +5,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import { type LinksFunction, LoaderFunctionArgs, data } from "@remix-run/node";
+import { type LinksFunction, data } from "@remix-run/node";
 
 import "./tailwind.css";
 
@@ -25,7 +25,7 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export async function loader({}: LoaderFunctionArgs) {
+export async function loader() {
   return data(localeResources["en"]);
 }
 
@@ -41,7 +41,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <Toaster visibleToasts={2} expand richColors />
+        <Toaster visibleToasts={2} richColors />
         <ScrollRestoration />
         <Scripts />
       </body>

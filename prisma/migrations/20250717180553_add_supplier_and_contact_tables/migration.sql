@@ -4,7 +4,6 @@ CREATE TABLE "Contact" (
     "name" TEXT NOT NULL,
     "email" TEXT,
     "phone" TEXT,
-    "jobTitle" TEXT,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -20,6 +19,8 @@ CREATE TABLE "Supplier" (
     "taxId" TEXT,
     "address" TEXT,
     "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Supplier_pkey" PRIMARY KEY ("id")
 );
