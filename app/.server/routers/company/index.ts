@@ -19,4 +19,8 @@ export const companyRouter = createTRPCRouter({
         },
       });
     }),
+  get: superAdminProcedure.query(async ({ ctx }) => {
+    const data = await ctx.db.company.findMany();
+    return data;
+  }),
 });

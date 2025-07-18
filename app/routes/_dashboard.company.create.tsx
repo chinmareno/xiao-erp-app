@@ -4,12 +4,13 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { useActionData, Form } from "@remix-run/react";
+import { useActionData, Form, useLoaderData } from "@remix-run/react";
 import { auth } from "~/lib/auth.server";
 import { formDataParser } from "~/lib/formDataParser";
 import { createCallerWithContext } from "~/.server/root.server";
 import { z } from "zod";
 import InputWithLabel from "~/components/InputWithLabel";
+import { useEffect, useRef } from "react";
 
 const createCompanySchema = z.object({
   name: z.string().min(1, "Company name cannot be empty"),
@@ -19,15 +20,15 @@ const createCompanySchema = z.object({
 
 type CreateCompanyForm = z.infer<typeof createCompanySchema>;
 
-export const loader: LoaderFunction = async ({
-  request,
-}: LoaderFunctionArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await auth.api.getSession({ headers: request.headers });
   if (session?.user.email !== "chinmareno1@gmail.com") return redirect("/");
-  return null;
+
+  const caller = await createCallerWithContext(request);
+  return await caller.company.get();
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export async function action({ request }: ActionFunctionArgs) {
   const caller = await createCallerWithContext(request);
   const data = (await formDataParser(request)) as CreateCompanyForm;
 
@@ -36,16 +37,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (result.error) return result.error.format();
 
   await caller.company.create(data);
-
-  return redirect("/");
-};
+  return null;
+}
 
 export default function CompanyCreate() {
   const actionData = useActionData<typeof action>();
+  const loaderData = useLoaderData<typeof loader>();
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (actionData === null) {
+      formRef.current?.reset();
+    }
+  }, [actionData, loaderData]);
+
   return (
     <div className="max-w-md mx-auto p-6">
       <h1 className="text-xl font-bold mb-4">Create New Company</h1>
-      <Form method="post" className="space-y-4">
+      <Form method="post" className="space-y-4" ref={formRef}>
         <InputWithLabel
           id="name"
           label="Company Name"
@@ -70,6 +80,29 @@ export default function CompanyCreate() {
           Create Company
         </button>
       </Form>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-2">Existing Companies</h2>
+        {loaderData.length === 0 ? (
+          <p>No companies found.</p>
+        ) : (
+          <ul className="space-y-2">
+            {loaderData.map((company) => (
+              <li key={company.id} className="border p-2 rounded">
+                <div className="font-semibold">{company.name}</div>
+                {company.address && (
+                  <div className="text-sm text-gray-600">{company.address}</div>
+                )}
+                {company.industry && (
+                  <div className="text-sm text-gray-600 italic">
+                    {company.industry}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
