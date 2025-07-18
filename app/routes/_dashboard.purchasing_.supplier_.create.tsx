@@ -14,13 +14,11 @@ import { createCallerWithContext } from "~/.server/root.server";
 
 export const supplierFormSchema = z
   .object({
-    // Supplier fields
     name: z.string().min(1, "Supplier name is required"),
     taxId: z.string().optional(),
     address: z.string().optional(),
     notes: z.string().optional(),
 
-    // Contact fields (optional)
     contactName: z
       .string()
       .transform((val) => (val.trim() === "" ? null : val)),
@@ -78,13 +76,15 @@ type SupplierForm = z.infer<typeof supplierFormSchema>;
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = Object.fromEntries(formData) as any;
+  const data = Object.fromEntries(formData) as SupplierForm;
+
+  const result = await supplierFormSchema.safeParseAsync(data);
+  if (result.error) return { errors: result.error.format() };
 
   const caller = await createCallerWithContext(request);
-  const result = await caller.purchasing.supplier.create(data);
+  await caller.purchasing.supplier.create(data);
 
-  if (result.success) return redirect("/purchasing/supplier");
+  return redirect("/purchasing/supplier");
 }
 
 export async function clientAction({
@@ -104,7 +104,7 @@ const SUPPLIER_INPUT_CLASSNAME = " my-2";
 const CONTACT_INPUT_CLASSNAME = " my-2";
 
 export default function PurchasingSupplierCreate() {
-  const actionData = useActionData<typeof clientAction>();
+  const actionData = useActionData<typeof action>();
 
   const errors = actionData?.errors;
 

@@ -9,7 +9,7 @@ export const login = {
   separator: "or continue with",
   googleButton: "Continue with Google",
   noAccount: "don't have an account?",
-  signUpLink: "SIgn up",
+  signUpLink: "Sign up",
   error: {
     invalidEmail: "Invalid email address",
     invalidPassword: "Password must be at least 8 characters",

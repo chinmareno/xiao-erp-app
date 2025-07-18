@@ -1,5 +1,4 @@
 import { Outlet, redirect, useLocation } from "@remix-run/react";
-import { SideNavbar } from "~/components/ui/side-navbar";
 import { Separator } from "~/components/ui/separator";
 import {
   SidebarInset,
@@ -14,6 +13,7 @@ import {
 } from "~/components/ui/breadcrumb";
 import { auth } from "~/lib/auth.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
+import { SideNavbar } from "./SideNavbar";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const isAuth = await auth.api.getSession({

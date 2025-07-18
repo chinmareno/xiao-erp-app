@@ -4,7 +4,6 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { Plus } from "lucide-react";
 
 export async function loader(): Promise<Supplier[]> {
-  // Fetch data from your API here.
   const result = [
     {
       id: "728ed52f",

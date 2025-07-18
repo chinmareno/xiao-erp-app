@@ -5,10 +5,16 @@ import { ZodError } from "zod";
 
 export async function createTRPCContext(opts: { req: Request }) {
   const session = await auth.api.getSession({ headers: opts.req.headers });
+  const role: "SUPERADMIN" | "USER" =
+    session?.user.emailVerified &&
+    session?.user.email === "chinmareno1@gmail.com"
+      ? "SUPERADMIN"
+      : "USER";
 
   return {
     db,
     session: session,
+    role,
     ...opts,
   };
 }
@@ -48,6 +54,30 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   return next({
     ctx: {
       session: ctx.session,
+      role: ctx.role,
+    },
+  });
+});
+
+export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You are not authorized",
+    });
+  }
+
+  if (ctx.role !== "SUPERADMIN") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not SUPERADMIN",
+    });
+  }
+
+  return next({
+    ctx: {
+      session: ctx.session,
+      role: ctx.role,
     },
   });
 });

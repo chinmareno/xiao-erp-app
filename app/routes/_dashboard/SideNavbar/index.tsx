@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 import { NavMain } from "~/components/nav-main";
-import { NavUser } from "~/components/nav-user";
 import { CompanySwitcher } from "~/components/company-switcher";
 import {
   Sidebar,
@@ -19,13 +18,14 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "~/components/ui/sidebar";
+import { NavUser } from "./NavUser";
 
 // This is sample data.
 const data = {
   user: {
     name: "shadcn",
     email: "m@example.com",
-    avatar: "/",
+    avatar: null,
   },
   companies: [
     {

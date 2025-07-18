@@ -5,5 +5,10 @@ const createCaller = createCallerFactory(appRouter);
 
 export const createCallerWithContext = async (req: Request) => {
   const createContext = await createTRPCContext({ req });
-  return createCaller(createContext);
+  return createCaller(createContext, {
+    onError: (err) => {
+      if (err.error.code === "INTERNAL_SERVER_ERROR")
+        console.log(`Error in path ${err.path} : ${err.error.message}`);
+    },
+  });
 };
