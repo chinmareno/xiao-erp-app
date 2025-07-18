@@ -15,6 +15,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
+import { Link } from "@remix-run/react";
 
 export function CompanySwitcher({
   companies,
@@ -79,7 +80,19 @@ export function CompanySwitcher({
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Plus className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">Add team</div>
+              <div className="font-medium text-muted-foreground">
+                Join Company
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="gap-2 p-2">
+              <Link to="/company/create" className="gap-2 p-2">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+                  <Plus className="size-4" />
+                </div>
+                <div className="font-medium text-muted-foreground">
+                  Create Company
+                </div>
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
