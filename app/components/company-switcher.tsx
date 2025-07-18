@@ -22,16 +22,16 @@ export function CompanySwitcher({
 }: {
   companies: {
     name: string;
-    logo: React.ElementType;
-    desc: string;
+    adress?: string | null;
+    industry?: string | null;
   }[];
 }) {
   const { isMobile } = useSidebar();
-  const [activeTeam, setActiveTeam] = React.useState(companies[0]);
+  const [selectedCompany, setSelectedCompany] = React.useState(companies[0]);
 
-  if (!activeTeam) {
-    return null;
-  }
+  React.useEffect(() => {
+    if (companies.length > 0) setSelectedCompany(companies[0]);
+  }, [companies]);
 
   return (
     <SidebarMenu>
@@ -42,14 +42,13 @@ export function CompanySwitcher({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <activeTeam.logo className="size-4" />
-              </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {activeTeam.name}
+                  {selectedCompany?.name ?? "No Company Yet"}
                 </span>
-                <span className="truncate text-xs">{activeTeam.desc}</span>
+                <span className="truncate text-xs">
+                  {selectedCompany?.industry ?? "N/A"}
+                </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -63,29 +62,36 @@ export function CompanySwitcher({
             <DropdownMenuLabel className="text-xs text-muted-foreground">
               Companies
             </DropdownMenuLabel>
-            {companies.map((company) => (
-              <DropdownMenuItem
-                key={company.name}
-                onClick={() => setActiveTeam(company)}
-                className="gap-2 p-2"
-              >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <company.logo className="size-4 shrink-0" />
-                </div>
-                {company.name}
-              </DropdownMenuItem>
-            ))}
+
+            {companies.length > 0 ? (
+              companies.map((company) => (
+                <DropdownMenuItem
+                  key={company.name}
+                  onClick={() => setSelectedCompany(company)}
+                  className="gap-2 p-2"
+                >
+                  {company.name}
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <div className="px-4 py-2 text-sm text-muted-foreground">
+                No companies available
+              </div>
+            )}
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
-              <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                <Plus className="size-4" />
-              </div>
-              <div className="font-medium text-muted-foreground">
-                Join Company
-              </div>
+            <DropdownMenuItem asChild className="gap-2 p-2">
+              <Link to="/company/join">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+                  <Plus className="size-4" />
+                </div>
+                <div className="font-medium text-muted-foreground">
+                  Join Company
+                </div>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="gap-2 p-2">
-              <Link to="/company/create" className="gap-2 p-2">
+              <Link to="/company/create">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                   <Plus className="size-4" />
                 </div>

@@ -1,6 +1,5 @@
 import {
   ActionFunctionArgs,
-  LoaderFunction,
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";

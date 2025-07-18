@@ -104,17 +104,51 @@ const data = {
   ],
 };
 
-export function SideNavbar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type Company = {
+  name: string;
+  address?: string | null;
+  industry?: string | null;
+};
+
+type User = {
+  name: string;
+  email: string;
+  image?: string | null;
+};
+
+type Module = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  submodules: {
+    title: string;
+    url: string;
+  }[];
+};
+
+type SideNavbarProps = React.ComponentProps<typeof Sidebar> & {
+  user: User;
+  companies: Company[];
+  modules?: Module[];
+};
+
+// TODO: add modules for company
+export function SideNavbar({
+  user,
+  companies,
+  modules,
+  ...props
+}: SideNavbarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <CompanySwitcher companies={data.companies} />
+        <CompanySwitcher companies={companies} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain modules={data.modules} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

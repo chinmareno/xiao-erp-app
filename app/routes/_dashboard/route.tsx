@@ -1,4 +1,4 @@
-import { Outlet, redirect, useLocation } from "@remix-run/react";
+import { Outlet, redirect, useLoaderData, useLocation } from "@remix-run/react";
 import { Separator } from "~/components/ui/separator";
 import {
   SidebarInset,
@@ -14,23 +14,30 @@ import {
 import { auth } from "~/lib/auth.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { SideNavbar } from "./SideNavbar";
+import { createCallerWithContext } from "~/.server/root.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const isAuth = await auth.api.getSession({
+  const session = await auth.api.getSession({
     headers: request.headers,
   });
-  if (!isAuth) return redirect("/login");
+  if (!session) return redirect("/login");
 
-  return null;
+  const user = session.user;
+  const caller = await createCallerWithContext(request);
+  const companies = await caller.company.getByUserId();
+
+  return { user, companies };
 }
 
 export default function DashboardLayout() {
   const { pathname } = useLocation();
   const segments = pathname.split("/");
 
+  const loaderData = useLoaderData<typeof loader>();
+
   return (
     <SidebarProvider>
-      <SideNavbar />
+      <SideNavbar user={loaderData.user} companies={loaderData.companies} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
