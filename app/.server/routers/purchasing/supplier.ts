@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/.server/trpc.server";
+import {
+  companyMemberProcedure,
+  createTRPCRouter,
+} from "~/.server/trpc.server";
 
 const createSupplierSchema = z
   .object({
@@ -41,7 +44,7 @@ const createSupplierSchema = z
   );
 
 export const supplierRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: companyMemberProcedure
     .input(createSupplierSchema)
     .mutation(async ({ ctx, input }) => {
       const isHaveContact = !!input.contactName;
@@ -61,17 +64,25 @@ export const supplierRouter = createTRPCRouter({
       };
 
       if (isHaveContact) {
-        await ctx.db.supplier.create({
+        await ctx.db.purchasing.update({
+          where: { companyId: ctx.companyId },
           data: {
-            ...supplierData,
-            contact: {
-              create: contactData,
+            supplier: {
+              create: {
+                ...supplierData,
+                contact: { create: contactData },
+              },
             },
           },
         });
       } else {
-        await ctx.db.supplier.create({
-          data: supplierData,
+        await ctx.db.purchasing.update({
+          where: { companyId: ctx.companyId },
+          data: {
+            supplier: {
+              create: supplierData,
+            },
+          },
         });
       }
     }),

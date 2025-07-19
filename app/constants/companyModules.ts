@@ -1,6 +1,6 @@
 export const MODULES_SUBMODULES = {
-  ACCOUNTING: ["Invoices", "Reports"],
-  SALES: ["Orders", "Customers"],
-  INVENTORY: ["Stock", "Transfers"],
-  PURCHASING: ["Supplier", "POs"],
+  ACCOUNTING: ["invoices", "reports"],
+  SALES: ["orders", "customers"],
+  INVENTORY: ["stock", "transfers"],
+  PURCHASING: ["supplier", "POs"],
 } as const;

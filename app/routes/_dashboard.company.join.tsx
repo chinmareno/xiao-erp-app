@@ -17,8 +17,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { error: result.error.format().companyId?._errors[0] };
 
   const caller = await createCallerWithContext(request);
+  const companyId = result.data?.companyId;
+
   try {
-    await caller.companyMember.create({ companyId: result.data?.companyId });
+    await caller.companyMember.create({ companyId });
   } catch (error) {
     if (error instanceof TRPCError) {
       if (error.code === "NOT_FOUND") {
@@ -32,7 +34,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
-  return redirect("/");
+  return redirect("/" + companyId);
 };
 
 export default function JoinCompanyForm() {

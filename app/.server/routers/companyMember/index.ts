@@ -42,4 +42,18 @@ export const companyMemberRouter = createTRPCRouter({
         },
       });
     }),
+
+  getByCompanyId: protectedProcedure
+    .input(z.string().min(1))
+    .query(async ({ ctx, input }) => {
+      const userCompanyMember = await ctx.db.companyMember.findUnique({
+        where: {
+          userId_companyId: {
+            userId: ctx.session.user.id,
+            companyId: input,
+          },
+        },
+      });
+      return userCompanyMember;
+    }),
 });

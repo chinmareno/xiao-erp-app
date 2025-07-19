@@ -15,7 +15,7 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Link, useNavigate, useRouteLoaderData } from "@remix-run/react";
-import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+import { useCompanyStore } from "~/hooks/useCompanyStore";
 import { DashboardLoader } from "../route";
 
 export function CompanySwitcher() {
@@ -63,7 +63,7 @@ export function CompanySwitcher() {
                   key={company.id}
                   onClick={() => {
                     setSelectedCompany(company);
-                    navigate("/");
+                    navigate(company.id);
                   }}
                   className="gap-2 p-2"
                 >

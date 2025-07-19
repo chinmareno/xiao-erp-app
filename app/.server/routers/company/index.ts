@@ -22,6 +22,7 @@ export const companyRouter = createTRPCRouter({
           address: input.address,
           industry: input.industry,
           desc: input.desc,
+          purchasing: { create: {} },
         },
       });
     }),
@@ -40,8 +41,22 @@ export const companyRouter = createTRPCRouter({
           },
         },
       },
+      include: { companyMember: false },
     });
 
     return data;
   }),
+
+  getByCompanyId: protectedProcedure
+    .input(z.string().min(1))
+    .query(async ({ ctx, input }) => {
+      const companyData = await ctx.db.company.findUnique({
+        where: {
+          id: input,
+          companyMember: { some: { id: ctx.session.user.id } },
+        },
+      });
+
+      return companyData;
+    }),
 });

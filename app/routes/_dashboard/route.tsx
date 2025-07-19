@@ -16,8 +16,6 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { Company, SideNavbar } from "./SideNavbar";
 import { createCallerWithContext } from "~/.server/root.server";
 import { createTRPCContext } from "~/.server/trpc.server";
-import { useEffect } from "react";
-import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
 
 export type DashboardLoader = typeof loader;
 
@@ -44,13 +42,6 @@ export default function DashboardLayout() {
   const segments = pathname.split("/");
 
   const loaderData = useLoaderData<typeof loader>();
-
-  const { selectedCompany, setSelectedCompany } = useCompanyStore();
-
-  useEffect(() => {
-    if (loaderData.companies.length >= 1 && selectedCompany === null)
-      setSelectedCompany(loaderData.companies[0]);
-  }, [loaderData, selectedCompany, setSelectedCompany]);
 
   return (
     <SidebarProvider>
@@ -82,7 +73,7 @@ export default function DashboardLayout() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div>
-            <Outlet context={selectedCompany} />
+            <Outlet />
           </div>
         </div>
       </SidebarInset>

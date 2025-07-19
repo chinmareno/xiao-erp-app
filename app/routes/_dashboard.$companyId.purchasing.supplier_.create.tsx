@@ -74,17 +74,19 @@ export const supplierFormSchema = z
 
 type SupplierForm = z.infer<typeof supplierFormSchema>;
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const data = Object.fromEntries(formData) as SupplierForm;
 
   const result = await supplierFormSchema.safeParseAsync(data);
   if (result.error) return { errors: result.error.format() };
 
-  const caller = await createCallerWithContext(request);
+  const companyId = params.companyId as string;
+
+  const caller = await createCallerWithContext(request, companyId);
   await caller.purchasing.supplier.create(data);
 
-  return redirect("/purchasing/supplier");
+  return redirect(`/${companyId}/purchasing/supplier`);
 }
 
 export async function clientAction({

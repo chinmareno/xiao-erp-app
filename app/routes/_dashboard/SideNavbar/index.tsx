@@ -20,90 +20,6 @@ import { NavUser } from "./NavUser";
 import { CompanySwitcher } from "./CompanySwitcher";
 import { NavMain } from "./NavMain";
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: null,
-  },
-  companies: [
-    {
-      name: "Huaxin",
-      logo: GalleryVerticalEnd,
-      desc: "Chip company",
-    },
-    {
-      name: "Gerun.",
-      logo: AudioWaveform,
-      desc: "Ice cream",
-    },
-    {
-      name: "Unknown",
-      logo: Command,
-      desc: "IDKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK",
-    },
-  ],
-  modules: [
-    {
-      title: "Accounting",
-      url: "#",
-      icon: SquareTerminal,
-      submodules: [
-        {
-          title: "Ledger",
-          url: "#",
-        },
-        {
-          title: "Book keeping",
-          url: "#",
-        },
-        {
-          title: "bla3",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Sales",
-      url: "#",
-      icon: Bot,
-      submodules: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Purchasing",
-      url: "#",
-      icon: BookOpen,
-      submodules: [
-        {
-          title: "supplier",
-          url: "/purchasing/supplier",
-        },
-        {
-          title: "purchase order",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Inventory",
-      url: "#",
-      icon: Settings2,
-      submodules: [
-        {
-          title: "General",
-          url: "#",
-        },
-      ],
-    },
-  ],
-};
-
 export type Company = {
   name: string;
   address?: string | null;
@@ -134,7 +50,7 @@ type SideNavbarProps = React.ComponentProps<typeof Sidebar> & {
   role: "SUPERADMIN" | "USER";
 };
 
-// TODO: add modules for company
+// TODO: add feature adding new modules for company
 export function SideNavbar({ ...props }: SideNavbarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -142,7 +58,7 @@ export function SideNavbar({ ...props }: SideNavbarProps) {
         <CompanySwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain modules={data.modules} />
+        <NavMain />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

@@ -13,9 +13,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
 
 model User {
-  id            String    @id
+  id            String       @id  @default(cuid())
   name          String
   email         String
   emailVerified Boolean
@@ -23,10 +27,12 @@ model User {
   sessions      Session[]
   accounts      Account[]
   
+  role          UserRole     @default(USER)
+
   companyMember CompanyMember[]
 
-  createdAt     DateTime
-  updatedAt     DateTime
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@unique([email])
   @@map("user")
@@ -92,10 +98,13 @@ model Company {
   desc                 String?
   modules              CompanyModules[] @default([PURCHASING,INVENTORY,SALES])
 
+
+  purchasing           Purchasing?
+  companyMember        CompanyMember[]
+
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  companyMember        CompanyMember[]
   
 }
 
@@ -105,43 +114,64 @@ enum CompanyRole {
 }
 
 model CompanyMember {
-  id         String   @id @default(cuid())
-  role       CompanyRole @default(EMPLOYEE)
-  joinedAt   DateTime @default(now())
+  id           String           @id @default(cuid())
+  role         CompanyRole      @default(EMPLOYEE)
+  joinedAt     DateTime         @default(now())
 
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  userId       String
+  user         User             @relation(fields: [userId], references: [id])
 
-  companyId  String
-  company    Company  @relation(fields: [companyId], references: [id])
+  permissions  CompanyModules[] @default([PURCHASING,INVENTORY,SALES])
+
+
+  companyId    String 
+  company      Company          @relation(fields: [companyId], references: [id])
+
 
   @@unique([userId, companyId])
 }
 
 model Contact {
-  id    String  @id @default(cuid())
+  id    String        @id @default(cuid())
   name  String
   email String?
   phone String?
   notes String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   supplierId String
   supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
 }
 
+model Purchasing {
+  id        String     @id @default(cuid())
+
+  supplier  Supplier[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  companyId String     @unique
+  company   Company    @relation(fields: [companyId], references: [id],onDelete: Cascade )
+
+}
+
 model Supplier {
-  id      String  @id @default(cuid())
-  name    String
-  taxId   String?
-  address String?
-  notes   String?
+  id            String  @id @default(cuid())
+  name          String
+  taxId         String?
+  address       String?
+  notes         String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  contact Contact[]
+  contact       Contact[]
+
+  purchasingId  String
+  purchasing    Purchasing @relation(fields: [purchasingId], references: [id], onDelete: Cascade)
+
 }

@@ -1,4 +1,5 @@
 import {
+  isRouteErrorResponse,
   Link,
   Links,
   Meta,
@@ -58,33 +59,37 @@ export default function App() {
 export function ErrorBoundary() {
   const error = useRouteError();
 
-  console.error("Root Error Boundary : " + error);
+  if (!isRouteErrorResponse(error))
+    console.error("In Root Error Boundary : " + error);
+
+  const message = isRouteErrorResponse(error)
+    ? `${error.status} ${error.statusText}`
+    : error instanceof Error
+    ? error.message
+    : "Unknown Error";
 
   return (
-    <html lang="en">
-      <head>
-        <title>Error</title>
-        <Meta />
-        <Links />
-      </head>
-      <body className="h-screen flex flex-col justify-center items-center bg-gray-100 text-gray-800">
-        <div className="max-w-md p-8 bg-white shadow-lg rounded-xl text-center border border-gray-200">
-          <h1 className="text-2xl font-semibold mb-4 text-red-600">
-            Something went wrong
-          </h1>
-          <p className="mb-6 text-sm text-gray-600">
-            An unexpected error occurred. Please try again later.
-          </p>
+    <div className="h-screen flex flex-col justify-center items-center bg-gray-100 text-gray-800">
+      <title>Error - Xiao ERP</title>
+      <Meta />
+      <Links />
 
-          <Link
-            to="/"
-            className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            Back to Home
-          </Link>
-        </div>
-        <Scripts />
-      </body>
-    </html>
+      <div className="max-w-md p-8 bg-white shadow-lg rounded-xl text-center border border-gray-200">
+        <h1 className="text-2xl font-semibold mb-4 text-red-600">
+          Something went wrong
+        </h1>
+
+        <p className="mb-6 text-sm text-gray-600">{message}</p>
+
+        <Link
+          to="/"
+          className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          Back to Home
+        </Link>
+      </div>
+
+      <Scripts />
+    </div>
   );
 }
