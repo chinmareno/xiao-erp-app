@@ -14,26 +14,18 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
-import { Link } from "@remix-run/react";
-import { Company } from "~/routes/_dashboard/SideNavbar";
+import { Link, useNavigate, useRouteLoaderData } from "@remix-run/react";
+import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+import { DashboardLoader } from "../route";
 
-export function CompanySwitcher({
-  companies,
-  role,
-  selectedCompany,
-  setSelectedCompany,
-}: {
-  role: "SUPERADMIN" | "USER";
-  selectedCompany: Company | null;
-  setSelectedCompany: (company: Company) => void;
-  companies: {
-    name: string;
-    adress?: string | null;
-    industry?: string | null;
-    desc?: string | null;
-  }[];
-}) {
+export function CompanySwitcher() {
   const { isMobile } = useSidebar();
+
+  const navigate = useNavigate();
+
+  const loaderData = useRouteLoaderData<DashboardLoader>("routes/_dashboard");
+
+  const { selectedCompany, setSelectedCompany } = useCompanyStore();
 
   return (
     <SidebarMenu>
@@ -65,11 +57,14 @@ export function CompanySwitcher({
               Companies
             </DropdownMenuLabel>
 
-            {companies.length > 0 ? (
-              companies.map((company) => (
+            {loaderData?.companies && loaderData.companies.length > 0 ? (
+              loaderData.companies.map((company) => (
                 <DropdownMenuItem
-                  key={company.name}
-                  onClick={() => setSelectedCompany(company)}
+                  key={company.id}
+                  onClick={() => {
+                    setSelectedCompany(company);
+                    navigate("/");
+                  }}
                   className="gap-2 p-2"
                 >
                   {company.name}
@@ -92,7 +87,7 @@ export function CompanySwitcher({
                 </div>
               </Link>
             </DropdownMenuItem>
-            {role === "SUPERADMIN" && (
+            {loaderData?.role === "SUPERADMIN" && (
               <DropdownMenuItem asChild className="gap-2 p-2">
                 <Link to="/company/create">
                   <div className="flex size-6 items-center justify-center rounded-md border bg-background">

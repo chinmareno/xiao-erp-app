@@ -24,19 +24,15 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 
-import defaultAvatar from "../../../../../src/default_profile.png";
+import defaultAvatar from "../../../../src/default_profile.png";
 import { authClient } from "~/lib/auth-client";
+import { useRouteLoaderData } from "@remix-run/react";
+import { DashboardLoader } from "../route";
 
-export type UserData = {
-  user: {
-    name: string;
-    email: string;
-    image?: string | null;
-  };
-};
-
-export function NavUser({ user }: UserData) {
+export function NavUser() {
   const { isMobile } = useSidebar();
+
+  const loaderData = useRouteLoaderData<DashboardLoader>("routes/_dashboard");
 
   const handleLogout = async () => {
     await authClient.signOut({
@@ -58,15 +54,22 @@ export function NavUser({ user }: UserData) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                {user.image ? (
-                  <AvatarImage src={user.image} alt={user.name} />
+                {loaderData?.user?.image ? (
+                  <AvatarImage
+                    src={loaderData?.user?.image}
+                    alt={loaderData?.user?.name}
+                  />
                 ) : (
                   <img src={defaultAvatar} alt={"default avatar"} />
                 )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-semibold">
+                  {loaderData?.user?.name}
+                </span>
+                <span className="truncate text-xs">
+                  {loaderData?.user?.email}
+                </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -80,15 +83,22 @@ export function NavUser({ user }: UserData) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  {user.image ? (
-                    <AvatarImage src={user.image} alt={user.name} />
+                  {loaderData?.user?.image ? (
+                    <AvatarImage
+                      src={loaderData?.user?.image}
+                      alt={loaderData?.user?.name}
+                    />
                   ) : (
                     <img src={defaultAvatar} alt={"default avatar"} />
                   )}
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-semibold">
+                    {loaderData?.user?.name}
+                  </span>
+                  <span className="truncate text-xs">
+                    {loaderData?.user?.email}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>

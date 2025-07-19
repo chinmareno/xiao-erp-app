@@ -9,8 +9,6 @@ import {
   SquareTerminal,
 } from "lucide-react";
 
-import { NavMain } from "~/components/nav-main";
-import { CompanySwitcher } from "~/components/company-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +17,8 @@ import {
   SidebarRail,
 } from "~/components/ui/sidebar";
 import { NavUser } from "./NavUser";
+import { CompanySwitcher } from "./CompanySwitcher";
+import { NavMain } from "./NavMain";
 
 // This is sample data.
 const data = {
@@ -131,36 +131,21 @@ type SideNavbarProps = React.ComponentProps<typeof Sidebar> & {
   user: User;
   companies: Company[];
   modules?: Module[];
-  selectedCompany: Company | null;
-  setSelectedCompany: (company: Company) => void;
   role: "SUPERADMIN" | "USER";
 };
 
 // TODO: add modules for company
-export function SideNavbar({
-  user,
-  companies,
-  modules,
-  role,
-  setSelectedCompany,
-  selectedCompany,
-  ...props
-}: SideNavbarProps) {
+export function SideNavbar({ ...props }: SideNavbarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <CompanySwitcher
-          selectedCompany={selectedCompany}
-          setSelectedCompany={setSelectedCompany}
-          role={role}
-          companies={companies}
-        />
+        <CompanySwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain modules={data.modules} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

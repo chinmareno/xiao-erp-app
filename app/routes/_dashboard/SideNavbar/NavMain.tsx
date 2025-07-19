@@ -1,6 +1,5 @@
-"use client";
-
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { Link } from "@remix-run/react";
+import { ChevronRight } from "lucide-react";
 
 import {
   Collapsible,
@@ -17,47 +16,38 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "~/components/ui/sidebar";
+import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+import { MODULES_SUBMODULES } from "../../../constants/companyModules";
 
-export function NavMain({
-  modules,
-}: {
-  modules: {
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-    submodules?: {
-      title: string;
-      url: string;
-    }[];
-  }[];
-}) {
+export function NavMain() {
+  const { selectedCompany } = useCompanyStore();
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Modules</SidebarGroupLabel>
       <SidebarMenu>
-        {modules.map((module, index) => (
+        {selectedCompany?.modules.map((module, index) => (
           <Collapsible
-            key={module.title}
+            key={module}
             asChild
             defaultOpen={index === 0}
             className="group/collapsible"
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={module.title}>
-                  {module.icon && <module.icon />}
-                  <span>{module.title}</span>
+                <SidebarMenuButton tooltip={module}>
+                  {/* TODO: Module Icon */}
+                  <span>{module}</span>
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenuSub>
-                  {module.submodules?.map((submodule) => (
-                    <SidebarMenuSubItem key={submodule.title}>
+                  {MODULES_SUBMODULES[module]?.map((submodule) => (
+                    <SidebarMenuSubItem key={submodule}>
                       <SidebarMenuSubButton asChild>
-                        <a href={submodule.url}>
-                          <span>{submodule.title}</span>
-                        </a>
+                        <Link to={`${module}/${submodule}`}>
+                          <span>{submodule}</span>
+                        </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   ))}

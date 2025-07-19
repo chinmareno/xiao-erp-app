@@ -78,13 +78,20 @@ model Verification {
   @@map("verification")
 }
 
+enum CompanyModules {
+  SALES
+  INVENTORY
+  PURCHASING
+}
+
 model Company {
   id                   String   @id @default(cuid())
   name                 String
   address              String?
   industry             String?
   desc                 String?
-  
+  modules              CompanyModules[] @default([PURCHASING,INVENTORY,SALES])
+
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

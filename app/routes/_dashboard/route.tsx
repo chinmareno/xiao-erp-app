@@ -16,7 +16,10 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { Company, SideNavbar } from "./SideNavbar";
 import { createCallerWithContext } from "~/.server/root.server";
 import { createTRPCContext } from "~/.server/trpc.server";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+
+export type DashboardLoader = typeof loader;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await auth.api.getSession({
@@ -42,13 +45,12 @@ export default function DashboardLayout() {
 
   const loaderData = useLoaderData<typeof loader>();
 
-  const [selectedCompany, setSelectedCompany] = useState<DashboardContext>(
-    loaderData.companies[0] || null
-  );
+  const { selectedCompany, setSelectedCompany } = useCompanyStore();
 
   useEffect(() => {
-    if (!selectedCompany) setSelectedCompany(loaderData.companies[0]);
-  }, [loaderData, selectedCompany]);
+    if (loaderData.companies.length >= 1 && selectedCompany === null)
+      setSelectedCompany(loaderData.companies[0]);
+  }, [loaderData, selectedCompany, setSelectedCompany]);
 
   return (
     <SidebarProvider>
@@ -56,8 +58,6 @@ export default function DashboardLayout() {
         role={loaderData.role}
         user={loaderData.user}
         companies={loaderData.companies}
-        selectedCompany={selectedCompany}
-        setSelectedCompany={setSelectedCompany}
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
