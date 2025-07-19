@@ -15,6 +15,7 @@ const createCompanySchema = z.object({
   name: z.string().min(1, "Company name cannot be empty"),
   address: z.string().optional(),
   industry: z.string().optional(),
+  desc: z.string().optional(),
 });
 
 type CreateCompanyForm = z.infer<typeof createCompanySchema>;
@@ -24,7 +25,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (session?.user.email !== "chinmareno1@gmail.com") return redirect("/");
 
   const caller = await createCallerWithContext(request);
-  return await caller.company.get();
+  return await caller.company.getAll();
 };
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -71,6 +72,11 @@ export default function CompanyCreate() {
           label="Industry"
           error={actionData?.industry?._errors[0]}
         />
+        <InputWithLabel
+          id="desc"
+          label="Description"
+          error={actionData?.desc?._errors[0]}
+        />
 
         <button
           type="submit"
@@ -88,7 +94,8 @@ export default function CompanyCreate() {
           <ul className="space-y-2">
             {loaderData.map((company) => (
               <li key={company.id} className="border p-2 rounded">
-                <div className="font-semibold">{company.name}</div>
+                <div className="font-bold"> {company.id}</div>
+                <div className="font-medium">{company.name}</div>
                 {company.address && (
                   <div className="text-sm text-gray-600">{company.address}</div>
                 )}

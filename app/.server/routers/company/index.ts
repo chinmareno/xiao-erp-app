@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   createTRPCRouter,
@@ -13,6 +12,7 @@ export const companyRouter = createTRPCRouter({
         name: z.string(),
         address: z.string().optional(),
         industry: z.string().optional(),
+        desc: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -21,11 +21,12 @@ export const companyRouter = createTRPCRouter({
           name: input.name,
           address: input.address,
           industry: input.industry,
+          desc: input.desc,
         },
       });
     }),
 
-  get: superAdminProcedure.query(async ({ ctx }) => {
+  getAll: superAdminProcedure.query(async ({ ctx }) => {
     const data = await ctx.db.company.findMany();
     return data;
   }),
@@ -43,44 +44,4 @@ export const companyRouter = createTRPCRouter({
 
     return data;
   }),
-
-  joinByCompanyId: protectedProcedure
-    .input(z.object({ companyId: z.string().min(1) }))
-    .mutation(async ({ input, ctx }) => {
-      const { companyId } = input;
-
-      const company = await ctx.db.company.findUnique({
-        where: { id: companyId },
-      });
-
-      if (!company) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Company not found",
-        });
-      }
-
-      const existing = await ctx.db.companyMember.findUnique({
-        where: {
-          userId_companyId: {
-            userId: ctx.session.user.id,
-            companyId,
-          },
-        },
-      });
-
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "You are already a member of this company",
-        });
-      }
-      await ctx.db.companyMember.create({
-        data: {
-          userId: ctx.session.user.id,
-          companyId,
-          role: "EMPLOYEE",
-        },
-      });
-    }),
 });

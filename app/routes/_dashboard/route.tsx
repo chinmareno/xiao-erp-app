@@ -13,8 +13,10 @@ import {
 } from "~/components/ui/breadcrumb";
 import { auth } from "~/lib/auth.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { SideNavbar } from "./SideNavbar";
+import { Company, SideNavbar } from "./SideNavbar";
 import { createCallerWithContext } from "~/.server/root.server";
+import { createTRPCContext } from "~/.server/trpc.server";
+import { useEffect, useState } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await auth.api.getSession({
@@ -24,10 +26,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const user = session.user;
   const caller = await createCallerWithContext(request);
+
   const companies = await caller.company.getByUserId();
 
-  return { user, companies };
+  const role = (await createTRPCContext(request)).role;
+
+  return { user, companies, role };
 }
+
+export type DashboardContext = Company | null;
 
 export default function DashboardLayout() {
   const { pathname } = useLocation();
@@ -35,9 +42,23 @@ export default function DashboardLayout() {
 
   const loaderData = useLoaderData<typeof loader>();
 
+  const [selectedCompany, setSelectedCompany] = useState<DashboardContext>(
+    loaderData.companies[0] || null
+  );
+
+  useEffect(() => {
+    if (!selectedCompany) setSelectedCompany(loaderData.companies[0]);
+  }, [loaderData, selectedCompany]);
+
   return (
     <SidebarProvider>
-      <SideNavbar user={loaderData.user} companies={loaderData.companies} />
+      <SideNavbar
+        role={loaderData.role}
+        user={loaderData.user}
+        companies={loaderData.companies}
+        selectedCompany={selectedCompany}
+        setSelectedCompany={setSelectedCompany}
+      />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -61,7 +82,7 @@ export default function DashboardLayout() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div>
-            <Outlet />
+            <Outlet context={selectedCompany} />
           </div>
         </div>
       </SidebarInset>

@@ -1,4 +1,3 @@
-import * as React from "react";
 import { ChevronsUpDown, Plus } from "lucide-react";
 
 import {
@@ -16,22 +15,25 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Link } from "@remix-run/react";
+import { Company } from "~/routes/_dashboard/SideNavbar";
 
 export function CompanySwitcher({
   companies,
+  role,
+  selectedCompany,
+  setSelectedCompany,
 }: {
+  role: "SUPERADMIN" | "USER";
+  selectedCompany: Company | null;
+  setSelectedCompany: (company: Company) => void;
   companies: {
     name: string;
     adress?: string | null;
     industry?: string | null;
+    desc?: string | null;
   }[];
 }) {
   const { isMobile } = useSidebar();
-  const [selectedCompany, setSelectedCompany] = React.useState(companies[0]);
-
-  React.useEffect(() => {
-    if (companies.length > 0) setSelectedCompany(companies[0]);
-  }, [companies]);
 
   return (
     <SidebarMenu>
@@ -90,16 +92,18 @@ export function CompanySwitcher({
                 </div>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="gap-2 p-2">
-              <Link to="/company/create">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                  <Plus className="size-4" />
-                </div>
-                <div className="font-medium text-muted-foreground">
-                  Create Company
-                </div>
-              </Link>
-            </DropdownMenuItem>
+            {role === "SUPERADMIN" && (
+              <DropdownMenuItem asChild className="gap-2 p-2">
+                <Link to="/company/create">
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+                    <Plus className="size-4" />
+                  </div>
+                  <div className="font-medium text-muted-foreground">
+                    Create Company
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

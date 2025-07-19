@@ -18,7 +18,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const caller = await createCallerWithContext(request);
   try {
-    await caller.company.joinByCompanyId({ companyId: result.data?.companyId });
+    await caller.companyMember.create({ companyId: result.data?.companyId });
   } catch (error) {
     if (error instanceof TRPCError) {
       if (error.code === "NOT_FOUND") {

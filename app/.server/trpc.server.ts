@@ -3,8 +3,8 @@ import { auth } from "../lib/auth.server";
 import { db } from "~/lib/db.server";
 import { ZodError } from "zod";
 
-export async function createTRPCContext(opts: { req: Request }) {
-  const session = await auth.api.getSession({ headers: opts.req.headers });
+export async function createTRPCContext(req: Request) {
+  const session = await auth.api.getSession({ headers: req.headers });
   const role: "SUPERADMIN" | "USER" =
     session?.user.emailVerified &&
     session?.user.email === "chinmareno1@gmail.com"
@@ -15,7 +15,6 @@ export async function createTRPCContext(opts: { req: Request }) {
     db,
     session: session,
     role,
-    ...opts,
   };
 }
 
