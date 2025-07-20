@@ -26,6 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!session) return redirect("/login");
 
   const user = session.user;
+
   const caller = await createCallerWithContext(request);
 
   const companies = await caller.company.getByUserId();
@@ -58,12 +59,12 @@ export default function DashboardLayout() {
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
-            {2 < segments.length ? (
+            {3 < segments.length ? (
               <Breadcrumb>
                 <BreadcrumbList className="capitalize">
-                  <BreadcrumbItem>{segments[1]}</BreadcrumbItem>
-                  <BreadcrumbSeparator />
                   <BreadcrumbItem>{segments[2]}</BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>{segments[3]}</BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
             ) : (
