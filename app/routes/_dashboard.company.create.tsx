@@ -4,7 +4,7 @@ import {
   redirect,
 } from "@remix-run/node";
 import { useActionData, Form, useLoaderData } from "@remix-run/react";
-import { auth } from "~/lib/auth.server";
+import { auth } from "~/lib/auth/auth.server";
 import { formDataParser } from "~/lib/formDataParser";
 import { createCallerWithContext } from "~/.server/root.server";
 import { z } from "zod";

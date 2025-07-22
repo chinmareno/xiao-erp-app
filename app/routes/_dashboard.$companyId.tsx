@@ -45,6 +45,7 @@ export default function DashboardCompanyIdLayout() {
       companyDetail && setSelectedCompany(companyDetail);
     }
     if (permissions === null) setPermissions(loaderData.permissions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.companyId, selectedCompany]);
 
   return <Outlet context={dashboardLoaderData} />;

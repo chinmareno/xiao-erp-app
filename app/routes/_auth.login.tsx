@@ -1,5 +1,5 @@
 import { Form, Link, useNavigate, useRouteLoaderData } from "@remix-run/react";
-import { Eye, EyeClosed } from "lucide-react";
+import { Eye, EyeClosed, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { z } from "zod";
@@ -13,7 +13,7 @@ import {
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { authClient } from "~/lib/auth-client";
+import { authClient } from "~/lib/auth/auth-client";
 import type { loader as localesLoader } from "../root";
 import { toast } from "sonner";
 
@@ -32,6 +32,8 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [passwordIsVisible, setPasswordIsVisible] = useState(false);
   const [errors, setErrors] = useState<LoginError | null>(null);
+  const [isCredentialLoading, setIsCredentialLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const t = useRouteLoaderData<typeof localesLoader>("root");
   const scopedT = t?.auth;
@@ -39,10 +41,12 @@ export default function LoginForm() {
   const navigate = useNavigate();
 
   const login = async () => {
+    if (isCredentialLoading) return;
     const result = loginSchema.safeParse({ email, password });
 
     if (result.success) {
       setErrors(null);
+      setIsCredentialLoading(true);
 
       await authClient.signIn.email({
         email,
@@ -52,21 +56,25 @@ export default function LoginForm() {
             navigate("/");
           },
           onError: (ctx) => {
+            setIsCredentialLoading(true);
             toast.error(ctx.error.message);
           },
         },
       });
     } else {
       const { email, password } = result.error.format();
-
-      return setErrors({
+      setErrors({
         email: !!email,
         password: !!password,
       });
     }
+    setIsCredentialLoading(false);
   };
 
   const signupGoogle = async () => {
+    if (isGoogleLoading) return;
+    setIsGoogleLoading(true);
+
     await authClient.signIn.social({
       provider: "google",
       callbackURL: "/",
@@ -91,7 +99,11 @@ export default function LoginForm() {
                   onClick={signupGoogle}
                   variant="outline"
                   className="w-full"
+                  disabled={isGoogleLoading}
                 >
+                  {isGoogleLoading && (
+                    <Loader2 className="animate-spin h-4 w-4" />
+                  )}
                   <FcGoogle className="h-6 w-6 flex-shrink-0" />
                   {scopedT?.login.googleButton}
                 </Button>
@@ -150,7 +162,11 @@ export default function LoginForm() {
                 <Button
                   type="submit"
                   className="w-full bg-blue-700 hover:bg-blue-900"
+                  disabled={isCredentialLoading}
                 >
+                  {isCredentialLoading && (
+                    <Loader2 className="animate-spin h-4 w-4" />
+                  )}
                   {scopedT?.login.loginButton}
                 </Button>
               </div>

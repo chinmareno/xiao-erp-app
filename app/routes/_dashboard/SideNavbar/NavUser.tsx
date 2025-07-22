@@ -25,7 +25,7 @@ import {
 } from "~/components/ui/sidebar";
 
 import defaultAvatar from "../../../../src/default_profile.png";
-import { authClient } from "~/lib/auth-client";
+import { authClient } from "~/lib/auth/auth-client";
 import { useRouteLoaderData } from "@remix-run/react";
 import { DashboardLoader } from "../route";
 

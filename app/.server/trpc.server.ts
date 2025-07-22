@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { auth } from "../lib/auth.server";
+import { auth } from "../lib/auth/auth.server";
 import { db } from "~/lib/db.server";
 import { ZodError } from "zod";
 

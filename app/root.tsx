@@ -43,8 +43,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
         <Toaster visibleToasts={2} richColors />
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -11,11 +11,13 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
-import { auth } from "~/lib/auth.server";
+import { auth } from "~/lib/auth/auth.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Company, SideNavbar } from "./SideNavbar";
 import { createCallerWithContext } from "~/.server/root.server";
 import { createTRPCContext } from "~/.server/trpc.server";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export type DashboardLoader = typeof loader;
 
@@ -43,6 +45,22 @@ export default function DashboardLayout() {
   const segments = pathname.split("/");
 
   const loaderData = useLoaderData<typeof loader>();
+
+  useEffect(() => {
+    const userCreatedAt = new Date(loaderData.user.createdAt);
+    const now = new Date();
+    const diffInSeconds = Math.abs(
+      (now.getTime() - userCreatedAt.getTime()) / 1000
+    );
+    if (diffInSeconds <= 5) {
+      toast.success(
+        `Welcome, ${
+          loaderData.user.name || loaderData.user.email
+        }. Your account has been created successfully.`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <SidebarProvider>
