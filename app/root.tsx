@@ -14,6 +14,7 @@ import "./tailwind.css";
 
 import localeResources from "../locales/locales.server";
 import { Toaster } from "./components/ui/sonner";
+import NotFound from "./routes/$";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -67,6 +68,9 @@ export function ErrorBoundary() {
     : error instanceof Error
     ? error.message
     : "Unknown Error";
+
+  if (error instanceof Error && error.message === "Not Found")
+    return <NotFound />;
 
   return (
     <div className="h-screen flex flex-col justify-center items-center bg-gray-100 text-gray-800">

@@ -22,6 +22,12 @@ export const companyRouter = createTRPCRouter({
           address: input.address,
           industry: input.industry,
           desc: input.desc,
+          companyMember: {
+            create: {
+              userId: ctx.session.user.id,
+              role: "OWNER",
+            },
+          },
           purchasing: { create: {} },
         },
       });

@@ -5,7 +5,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
@@ -76,28 +75,30 @@ export function CompanySwitcher() {
               </div>
             )}
 
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="gap-2 p-2">
-              <Link to="/company/join">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                  <Plus className="size-4" />
-                </div>
-                <div className="font-medium text-muted-foreground">
-                  Join Company
-                </div>
-              </Link>
-            </DropdownMenuItem>
             {loaderData?.role === "SUPERADMIN" && (
-              <DropdownMenuItem asChild className="gap-2 p-2">
-                <Link to="/company/create">
-                  <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                    <Plus className="size-4" />
-                  </div>
-                  <div className="font-medium text-muted-foreground">
-                    Create Company
-                  </div>
-                </Link>
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem asChild className="gap-2 p-2">
+                  <Link to="/admin/company/join">
+                    <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+                      <Plus className="size-4" />
+                    </div>
+                    <div className="font-medium text-muted-foreground">
+                      Join Company
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild className="gap-2 p-2">
+                  <Link to="/admin/company/create">
+                    <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+                      <Plus className="size-4" />
+                    </div>
+                    <div className="font-medium text-muted-foreground">
+                      Create Company
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

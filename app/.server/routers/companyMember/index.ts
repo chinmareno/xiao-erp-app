@@ -1,15 +1,20 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/.server/trpc.server";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  superAdminProcedure,
+} from "~/.server/trpc.server";
 
 export const companyMemberRouter = createTRPCRouter({
-  create: protectedProcedure
+  joinByCompanyId: superAdminProcedure
     .input(z.object({ companyId: z.string().min(1) }))
     .mutation(async ({ input, ctx }) => {
       const { companyId } = input;
 
       const company = await ctx.db.company.findUnique({
         where: { id: companyId },
+        select: { modules: true },
       });
 
       if (!company) {
@@ -26,6 +31,7 @@ export const companyMemberRouter = createTRPCRouter({
             companyId,
           },
         },
+        select: { id: true },
       });
 
       if (existing) {
@@ -34,11 +40,13 @@ export const companyMemberRouter = createTRPCRouter({
           message: "You are already a member of this company",
         });
       }
+
       await ctx.db.companyMember.create({
         data: {
           userId: ctx.session.user.id,
           companyId,
           role: "EMPLOYEE",
+          permissions: company.modules,
         },
       });
     }),

@@ -94,6 +94,42 @@ export const companyMemberProcedure = t.procedure.use(async ({ ctx, next }) => {
   });
 });
 
+export const ownerProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const companyId = ctx.companyId;
+
+  if (!ctx.session || !companyId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Unauthorized",
+    });
+  }
+
+  const isOwner = await ctx.db.companyMember.findUnique({
+    where: {
+      userId_companyId: {
+        userId: ctx.session.user.id,
+        companyId,
+      },
+    },
+    select: { role: true },
+  });
+
+  if (!isOwner || isOwner.role !== "OWNER") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You must be the owner of this company",
+    });
+  }
+
+  return next({
+    ctx: {
+      session: ctx.session,
+      role: ctx.role,
+      companyId: ctx.companyId,
+    },
+  });
+});
+
 export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session?.user) {
     throw new TRPCError({

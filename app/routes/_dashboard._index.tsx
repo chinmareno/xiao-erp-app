@@ -1,4 +1,3 @@
-import { Link } from "@remix-run/react";
 import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { createCallerWithContext } from "~/.server/root.server";
 
@@ -18,15 +17,10 @@ export default function DashboardIndex() {
         <h2 className="text-2xl font-semibold mb-2 text-foreground">
           No Company Joined
         </h2>
-        <p className="text-sm text-muted-foreground mb-6">
-          You haven't joined any company yet. Join one to access your dashboard.
+        <p className="text-sm text-muted-foreground">
+          You need an invite link to join a company. Ask your manager or team
+          lead.
         </p>
-        <Link
-          to="/company/join"
-          className="inline-block bg-primary text-white px-6 py-2.5 rounded-lg hover:bg-primary/90 transition"
-        >
-          Join a Company
-        </Link>
       </div>
     </section>
   );

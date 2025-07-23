@@ -98,6 +98,7 @@ model Company {
   desc                 String?
   modules              CompanyModules[] @default([PURCHASING,INVENTORY,SALES])
 
+  inviteLink           InviteLink[]
 
   purchasing           Purchasing?
   companyMember        CompanyMember[]
@@ -175,3 +176,17 @@ model Supplier {
   purchasing    Purchasing @relation(fields: [purchasingId], references: [id], onDelete: Cascade)
 
 }
+
+model InviteLink {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime 
+
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+}
+

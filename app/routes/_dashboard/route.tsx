@@ -92,7 +92,7 @@ export default function DashboardLayout() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div>
-            <Outlet />
+            <Outlet context={loaderData.role} />
           </div>
         </div>
       </SidebarInset>

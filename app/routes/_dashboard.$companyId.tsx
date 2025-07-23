@@ -10,7 +10,7 @@ import { createCallerWithContext } from "~/.server/root.server";
 import { useCompanyStore } from "~/hooks/useCompanyStore";
 import { DashboardLoader } from "./_dashboard/route";
 
-export type CompanyContext = typeof loader;
+export type CompanyIdLoader = typeof loader;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const caller = await createCallerWithContext(request);
@@ -20,8 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId
   );
 
-  // TODO: change to semantic error
-  if (!userCompanyMember) throw new Error("Page Not Found");
+  if (!userCompanyMember) throw new Error("Not Found");
 
   return userCompanyMember;
 }
@@ -48,5 +47,9 @@ export default function DashboardCompanyIdLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.companyId, selectedCompany]);
 
-  return <Outlet context={dashboardLoaderData} />;
+  return (
+    <Outlet
+      context={{ dashboardLoaderData, companyIdLoaderData: loaderData }}
+    />
+  );
 }

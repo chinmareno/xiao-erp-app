@@ -23,7 +23,7 @@ import { Label } from "~/components/ui/label";
 import { authClient } from "~/lib/auth/auth-client";
 import type { loader as localesLoader } from "../root";
 import { toast } from "sonner";
-import { ActionFunctionArgs, redirect } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { formDataParser } from "~/lib/formDataParser";
 import { auth } from "~/lib/auth/auth.server";
 
@@ -99,6 +99,7 @@ export default function SignupForm() {
         fetchOptions: { onSuccess: () => navigate("/") },
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actionData]);
 
   const t = useRouteLoaderData<typeof localesLoader>("root");
