@@ -10,7 +10,6 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    autoSignIn: false,
   },
   socialProviders: {
     google: {
@@ -21,7 +20,8 @@ export const auth = betterAuth({
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp }) {
-        await sendEmailVerification({ email, otp });
+        console.log(otp);
+        // await sendEmailVerification({ email, otp });
       },
     }),
   ],

@@ -125,7 +125,7 @@ model CompanyMember {
 
 
   companyId    String 
-  company      Company          @relation(fields: [companyId], references: [id])
+  company      Company          @relation(fields: [companyId], references: [id],onDelete: Cascade)
 
 
   @@unique([userId, companyId])

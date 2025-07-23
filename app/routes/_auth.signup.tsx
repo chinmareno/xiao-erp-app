@@ -1,6 +1,7 @@
 import {
   Form,
   Link,
+  useActionData,
   useNavigate,
   useRouteLoaderData,
   useSubmit,
@@ -38,7 +39,14 @@ export async function action({ request }: ActionFunctionArgs) {
   await auth.api.resetPasswordEmailOTP({
     body: { email: formData.email, otp: token, password: formData.password },
   });
-  return redirect("/");
+  await auth.api.signInEmail({
+    body: {
+      email: formData.email,
+      password: formData.password,
+    },
+    headers: request.headers,
+  });
+  return { email: formData.email, password: formData.password };
 }
 
 const signupSchema = z
@@ -79,7 +87,19 @@ export default function SignupForm() {
   const [isCredentialLoading, setIsCredentialLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
+  const actionData = useActionData<typeof action>();
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (actionData) {
+      authClient.signIn.email({
+        email,
+        password,
+        fetchOptions: { onSuccess: () => navigate("/") },
+      });
+    }
+  }, [actionData]);
 
   const t = useRouteLoaderData<typeof localesLoader>("root");
   const scopedT = t?.auth;
