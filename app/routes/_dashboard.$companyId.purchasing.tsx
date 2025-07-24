@@ -26,7 +26,7 @@ export default function DashboardPurchasingLayout() {
       !selectedCompany?.modules.includes("PURCHASING") ||
       !companyIdLoaderData?.permissions.includes("PURCHASING")
     ) {
-      throw new Error("Page Not Found");
+      throw new Error("Not Found");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany]);

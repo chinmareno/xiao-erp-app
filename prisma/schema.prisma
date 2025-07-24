@@ -122,7 +122,7 @@ model CompanyMember {
   userId       String
   user         User             @relation(fields: [userId], references: [id])
 
-  permissions  CompanyModules[] @default([PURCHASING,INVENTORY,SALES])
+  permissions  CompanyModules[] 
 
 
   companyId    String 

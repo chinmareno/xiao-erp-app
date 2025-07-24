@@ -1,4 +1,10 @@
-import { Outlet, redirect, useLoaderData, useLocation } from "@remix-run/react";
+import {
+  Outlet,
+  redirect,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+} from "@remix-run/react";
 import { Separator } from "~/components/ui/separator";
 import {
   SidebarInset,
@@ -18,6 +24,7 @@ import { createCallerWithContext } from "~/.server/root.server";
 import { createTRPCContext } from "~/.server/trpc.server";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useInviteLinkTokenStore } from "~/hooks/useInviteLinkTokenStore";
 
 export type DashboardLoader = typeof loader;
 
@@ -46,6 +53,10 @@ export default function DashboardLayout() {
 
   const loaderData = useLoaderData<typeof loader>();
 
+  const { token } = useInviteLinkTokenStore();
+
+  const navigate = useNavigate();
+
   useEffect(() => {
     const userCreatedAt = new Date(loaderData.user.createdAt);
     const now = new Date();
@@ -61,6 +72,13 @@ export default function DashboardLayout() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (token !== null) {
+      navigate(`/invite/${token}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   return (
     <SidebarProvider>

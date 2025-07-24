@@ -53,12 +53,8 @@ export default function DashboardIndex() {
 
   const handleCopy = async () => {
     if (!actionData) return;
-    try {
-      await navigator.clipboard.writeText(actionData);
-      setCopied(true);
-    } catch (err) {
-      console.error("Copy failed", err);
-    }
+    await navigator.clipboard.writeText(actionData);
+    setCopied(true);
   };
 
   return (
@@ -108,7 +104,11 @@ export default function DashboardIndex() {
                 <p className="text-sm ml-2  font-medium text-foreground mb-1">
                   Invite Link
                 </p>
-                <div className="flex w-full relative items-center bg-muted pl-4 py-3 rounded-lg">
+                <div
+                  className={`flex w-full border border-slate-400 relative items-center bg-muted pl-4 py-3 rounded-lg ${
+                    copied && "bg-green-100/50 border border-green-500"
+                  }`}
+                >
                   <span className="truncate text-black">{actionData}</span>
                   <Button
                     size="sm"

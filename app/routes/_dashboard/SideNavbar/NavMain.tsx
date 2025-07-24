@@ -26,7 +26,7 @@ export function NavMain() {
       <SidebarGroupLabel>
         {selectedCompany === null
           ? null
-          : selectedCompany?.modules && permissions
+          : selectedCompany?.modules && (permissions?.length ?? 0) > 0
           ? "Modules"
           : "No Permissions yet"}
       </SidebarGroupLabel>
