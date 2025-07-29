@@ -1,27 +1,18 @@
-import { columns, Supplier } from "./columns";
+import { LoaderFunctionArgs } from "@remix-run/node";
+import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Plus } from "lucide-react";
+import { createCallerWithContext } from "~/api/root.server";
 
-export async function loader(): Promise<Supplier[]> {
-  const result = [
-    {
-      id: "728ed52f",
-      name: "pt haha",
-      address: "jl hahay",
-      contact: "budi - 08888666",
-      taxId: "3322244",
-    },
-    {
-      id: "728ed52f",
-      name: "pt haha",
-      address: "jl hahay",
-      contact: "budi - 08888666",
-      taxId: "3322244",
-    },
-  ];
+export type SupplierLoaderData = Awaited<ReturnType<typeof loader>>;
 
-  return result;
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const companyId = params.companyId as string;
+  const caller = await createCallerWithContext(request, companyId);
+  const suppliers = await caller.purchasing.supplier.getSuppliersByCompanyId();
+
+  return suppliers;
 }
 
 export default function PurchasingSupplier() {
@@ -29,7 +20,7 @@ export default function PurchasingSupplier() {
 
   return (
     <div className="container mx-auto flex  flex-col py-10">
-      <h2 className="text-center">supplier table</h2>
+      <h2 className="text-center font-semibold capitalize">suppliers table</h2>
       <Link
         className="mb-1 ml-auto inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
         to="create"

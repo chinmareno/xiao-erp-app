@@ -6,15 +6,15 @@ import {
 import { useActionData, Form, useLoaderData } from "@remix-run/react";
 import { auth } from "~/lib/auth/auth.server";
 import { formDataParser } from "~/lib/formDataParser";
-import { createCallerWithContext } from "~/.server/root.server";
+import { createCallerWithContext } from "~/api/root.server";
 import { z } from "zod";
 import InputWithLabel from "~/components/InputWithLabel";
 import { useEffect, useRef } from "react";
 
 const createCompanySchema = z.object({
-  name: z.string().min(1, "Company name cannot be empty"),
-  address: z.string().optional(),
-  industry: z.string().optional(),
+  name: z.string().min(1, "Company name is required"),
+  address: z.string().min(1, "Address is required"),
+  industry: z.string().min(1, "Industry is required"),
   desc: z.string().optional(),
 });
 
@@ -65,11 +65,13 @@ export default function CompanyCreate() {
         <InputWithLabel
           id="address"
           label="Address"
+          required
           error={actionData?.address?._errors[0]}
         />
         <InputWithLabel
           id="industry"
           label="Industry"
+          required
           error={actionData?.industry?._errors[0]}
         />
         <InputWithLabel

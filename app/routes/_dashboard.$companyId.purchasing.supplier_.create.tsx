@@ -10,12 +10,20 @@ import { Button } from "~/components/ui/button";
 
 import { z } from "zod";
 import FormHeader from "~/components/ui/FormHeader";
-import { createCallerWithContext } from "~/.server/root.server";
+import { createCallerWithContext } from "~/api/root.server";
+import { formDataParser } from "~/lib/formDataParser";
+
+const npwpRegex = /^\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}$/;
 
 export const supplierFormSchema = z
   .object({
     name: z.string().min(1, "Supplier name is required"),
-    taxId: z.string().optional(),
+    taxId: z
+      .string()
+      .transform((val) => (val.trim() === "" ? null : val.trim()))
+      .pipe(
+        z.union([z.string().regex(npwpRegex, "Invalid NPWP format"), z.null()])
+      ),
     address: z.string().optional(),
     notes: z.string().optional(),
 
@@ -75,16 +83,15 @@ export const supplierFormSchema = z
 type SupplierForm = z.infer<typeof supplierFormSchema>;
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const data = Object.fromEntries(formData) as SupplierForm;
+  const formData = await formDataParser(request);
 
-  const result = await supplierFormSchema.safeParseAsync(data);
+  const result = await supplierFormSchema.safeParseAsync(formData);
   if (result.error) return { errors: result.error.format() };
 
   const companyId = params.companyId as string;
 
   const caller = await createCallerWithContext(request, companyId);
-  await caller.purchasing.supplier.create(data);
+  await caller.purchasing.supplier.createSupplier(result.data);
 
   return redirect(`/${companyId}/purchasing/supplier`);
 }
@@ -94,9 +101,8 @@ export async function clientAction({
   serverAction,
 }: ClientActionFunctionArgs) {
   const requestClone = request.clone();
-  const formData = await requestClone.formData();
-  const data = Object.fromEntries(formData) as SupplierForm;
-  const result = await supplierFormSchema.safeParseAsync(data);
+  const formData = await formDataParser(requestClone);
+  const result = await supplierFormSchema.safeParseAsync(formData);
   if (result.error) return { errors: result.error.format() };
   return serverAction<typeof action>();
 }
@@ -128,6 +134,7 @@ export default function PurchasingSupplierCreate() {
         <InputWithLabel
           id="taxId"
           label="Tax Id (NPWP)"
+          maxLength={20}
           error={errors?.taxId?._errors[0]}
           className={SUPPLIER_INPUT_CLASSNAME}
           helperText="Leave empty if the supplier is not VAT registered (Non-PKP)."

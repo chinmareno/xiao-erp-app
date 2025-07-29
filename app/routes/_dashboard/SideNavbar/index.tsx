@@ -10,13 +10,7 @@ import {
 import { NavUser } from "./NavUser";
 import { CompanySwitcher } from "./CompanySwitcher";
 import { NavMain } from "./NavMain";
-
-export type Company = {
-  name: string;
-  address?: string | null;
-  industry?: string | null;
-  desc?: string | null;
-};
+import { Company } from "@prisma/client";
 
 type User = {
   name: string;
@@ -46,7 +40,7 @@ export function SideNavbar({ ...props }: SideNavbarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <CompanySwitcher />
+        <CompanySwitcher role={props.role} companies={props.companies} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain />

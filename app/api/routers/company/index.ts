@@ -3,15 +3,15 @@ import {
   createTRPCRouter,
   protectedProcedure,
   superAdminProcedure,
-} from "~/.server/trpc.server";
+} from "~/api/trpc.server";
 
 export const companyRouter = createTRPCRouter({
   create: superAdminProcedure
     .input(
       z.object({
-        name: z.string(),
-        address: z.string().optional(),
-        industry: z.string().optional(),
+        name: z.string().min(1, "Company name is required"),
+        address: z.string().min(1, "Address is required"),
+        industry: z.string().min(1, "Industry is required"),
         desc: z.string().optional(),
       })
     )
@@ -28,7 +28,6 @@ export const companyRouter = createTRPCRouter({
               role: "OWNER",
             },
           },
-          purchasing: { create: {} },
         },
       });
     }),
@@ -47,22 +46,18 @@ export const companyRouter = createTRPCRouter({
           },
         },
       },
-      include: { companyMember: false },
     });
 
     return data;
   }),
 
-  getByCompanyId: protectedProcedure
-    .input(z.string().min(1))
-    .query(async ({ ctx, input }) => {
-      const companyData = await ctx.db.company.findUnique({
-        where: {
-          id: input,
-          companyMember: { some: { id: ctx.session.user.id } },
-        },
-      });
+  getByCompanyId: protectedProcedure.query(async ({ ctx }) => {
+    const companyData = await ctx.db.company.findUnique({
+      where: {
+        id: ctx.companyId,
+      },
+    });
 
-      return companyData;
-    }),
+    return companyData;
+  }),
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { createTRPCRouter, ownerProcedure } from "~/.server/trpc.server";
+import { createTRPCRouter, ownerProcedure } from "~/api/trpc.server";
 
 export const inviteLinkRouter = createTRPCRouter({
   create: ownerProcedure

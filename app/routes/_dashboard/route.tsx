@@ -19,14 +19,13 @@ import {
 } from "~/components/ui/breadcrumb";
 import { auth } from "~/lib/auth/auth.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Company, SideNavbar } from "./SideNavbar";
-import { createCallerWithContext } from "~/.server/root.server";
-import { createTRPCContext } from "~/.server/trpc.server";
+import { SideNavbar } from "./SideNavbar";
+import { createCallerWithContext } from "~/api/root.server";
+import { createTRPCContext } from "~/api/trpc.server";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useInviteLinkTokenStore } from "~/hooks/useInviteLinkTokenStore";
-
-export type DashboardLoader = typeof loader;
+import { Company, User } from "@prisma/client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await auth.api.getSession({
@@ -45,7 +44,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { user, companies, role };
 }
 
-export type DashboardContext = Company | null;
+export type DashboardLoader = {
+  user: User;
+  companies: Company[];
+  role: "SUPERADMIN" | "USER";
+};
 
 export default function DashboardLayout() {
   const { pathname } = useLocation();

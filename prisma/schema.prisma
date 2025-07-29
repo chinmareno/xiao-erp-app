@@ -19,20 +19,20 @@ enum UserRole {
 }
 
 model User {
-  id            String       @id  @default(cuid())
+  id            String    @id @default(cuid())
   name          String
   email         String
   emailVerified Boolean
   image         String?
   sessions      Session[]
   accounts      Account[]
-  
-  role          UserRole     @default(USER)
+
+  role UserRole @default(USER)
 
   companyMember CompanyMember[]
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([email])
   @@map("user")
@@ -48,7 +48,6 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
 
   @@unique([token])
   @@map("session")
@@ -91,102 +90,193 @@ enum CompanyModules {
 }
 
 model Company {
-  id                   String   @id @default(cuid())
-  name                 String
-  address              String?
-  industry             String?
-  desc                 String?
-  modules              CompanyModules[] @default([PURCHASING,INVENTORY,SALES])
+  id       String           @id @default(cuid())
+  name     String
+  address  String
+  industry String
+  desc     String?
+  modules  CompanyModules[] @default([PURCHASING, INVENTORY, SALES])
 
-  inviteLink           InviteLink[]
+  inviteLink InviteLink[]
 
-  purchasing           Purchasing?
-  companyMember        CompanyMember[]
+  suppliers Supplier[]
+  companyMember CompanyMember[]
+  purchaseOrders PurchaseOrder[]
+  poNumberFormat PONumberFormat?
 
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  
+  warehouses Warehouse[]
 }
 
 enum CompanyRole {
   OWNER
+  ADMIN
   EMPLOYEE
 }
 
 model CompanyMember {
-  id           String           @id @default(cuid())
-  role         CompanyRole      @default(EMPLOYEE)
-  joinedAt     DateTime         @default(now())
+  id       String      @id @default(cuid())
+  role     CompanyRole @default(EMPLOYEE)
+  joinedAt DateTime    @default(now())
 
-  userId       String
-  user         User             @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  permissions  CompanyModules[] 
+  permissions CompanyModules[]
 
-
-  companyId    String 
-  company      Company          @relation(fields: [companyId], references: [id],onDelete: Cascade)
-
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([userId, companyId])
 }
 
 model Contact {
-  id    String        @id @default(cuid())
+  id    String  @id @default(cuid())
   name  String
   email String?
   phone String?
   notes String?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   supplierId String
   supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-}
-
-model Purchasing {
-  id        String     @id @default(cuid())
-
-  supplier  Supplier[]
-
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  companyId String     @unique
-  company   Company    @relation(fields: [companyId], references: [id],onDelete: Cascade )
-
-}
-
-model Supplier {
-  id            String  @id @default(cuid())
-  name          String
-  taxId         String?
-  address       String?
-  notes         String?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  contact       Contact[]
-
-  purchasingId  String
-  purchasing    Purchasing @relation(fields: [purchasingId], references: [id], onDelete: Cascade)
-
 }
 
 model InviteLink {
-  id          String   @id @default(cuid())
-  token       String   @unique
-  
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime 
+  id    String @id @default(cuid())
+  token String @unique
 
-  companyId   String
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([token])
 }
 
+model Supplier {
+  id      String  @id @default(cuid())
+  name    String
+  taxId   String?
+  address String
+  notes   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contact Contact[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  products       SupplierProduct[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model Item {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  supplierProducts  SupplierProduct[]
+}
+
+model SupplierProduct {
+  id                 String              @id @default(cuid())
+  itemId             String
+  item               Item                @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  supplierId         String
+  supplier           Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  costIdr            Float
+  costYuan           Float
+  image              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  stockItems         StockItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+}
+
+model Warehouse {
+  id         String      @id @default(cuid())
+  name       String
+  location   String?
+  companyId  String
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  stockItems StockItem[]
+}
+
+model StockItem {
+  id          String    @id @default(cuid())
+  supplierProductId   String
+  supplierProduct     SupplierProduct   @relation(fields: [supplierProductId], references: [id], onDelete: Cascade)
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  quantity    Int
+  costIdr     Float
+  costYuan    Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum PurchaseOrderStatus {
+  UNRECEIVED
+  RECEIVED
+}
+
+model PONumberFormat {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  prefix      String   
+  currentNumber Int    @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([companyId])
+}
+
+model PurchaseOrder {
+  id               String              @id @default(cuid())
+  supplierId       String
+  supplier         Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  companyId        String
+  company          Company            @relation(fields: [companyId ], references: [id], onDelete: Cascade)
+  @@unique([companyId, PONumber])
+  PONumber          String
+  status           PurchaseOrderStatus @default(UNRECEIVED)
+  isActive         Boolean @default(true)
+  lastReceivedDate  DateTime?
+  expectedFullReceivedDate DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  items            PurchaseOrderItem[]
+}
+
+model YuanIdrRate {
+  id         String   @id @default(cuid())
+  yuanToIdrRate  Float
+  idrToYuanRate  Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+
+model PurchaseOrderItem {
+  id              String   @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  supplierProductId       String
+  supplierProduct         SupplierProduct  @relation(fields: [supplierProductId], references: [id], onDelete: Cascade)
+  quantity        Int
+  costYuan        Float
+  costIdr         Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

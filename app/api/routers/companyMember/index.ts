@@ -1,10 +1,11 @@
+import { CompanyModules } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
   superAdminProcedure,
-} from "~/.server/trpc.server";
+} from "~/api/trpc.server";
 
 export const companyMemberRouter = createTRPCRouter({
   joinByCompanyId: superAdminProcedure
@@ -45,25 +46,38 @@ export const companyMemberRouter = createTRPCRouter({
         data: {
           userId: ctx.session.user.id,
           companyId,
-          role: "EMPLOYEE",
-          permissions: company.modules,
+          role: "ADMIN",
         },
       });
     }),
 
-  getByCompanyId: protectedProcedure
-    .input(z.string().min(1))
-    .query(async ({ ctx, input }) => {
-      const userCompanyMember = await ctx.db.companyMember.findUnique({
-        where: {
-          userId_companyId: {
-            userId: ctx.session.user.id,
-            companyId: input,
-          },
-        },
+  getByCompanyId: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.companyId) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Company not found",
       });
-      return userCompanyMember;
-    }),
+    }
+
+    const userCompanyMember = await ctx.db.companyMember.findUnique({
+      where: {
+        userId_companyId: {
+          userId: ctx.session.user.id,
+          companyId: ctx.companyId,
+        },
+      },
+      include: { company: { select: { modules: true } } },
+    });
+    if (userCompanyMember) {
+      const companyModules = userCompanyMember?.company?.modules;
+      if (
+        userCompanyMember?.role === "OWNER" ||
+        userCompanyMember?.role === "ADMIN"
+      ) {
+        return { ...userCompanyMember, permissions: companyModules };
+      } else return { ...userCompanyMember };
+    }
+  }),
 
   joinByInviteLink: protectedProcedure
     .input(z.object({ token: z.string().min(1) }))
@@ -108,12 +122,15 @@ export const companyMemberRouter = createTRPCRouter({
         });
       }
 
+      const isAdmin = ctx.role === "SUPERADMIN";
+
       await ctx.db.company.update({
         where: { id: inviteLink.companyId },
         data: {
           companyMember: {
             create: {
               userId: ctx.session.user.id,
+              role: isAdmin ? "ADMIN" : "EMPLOYEE",
             },
           },
         },

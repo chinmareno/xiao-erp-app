@@ -1,3 +1,4 @@
+import { useNavigate } from "@remix-run/react";
 import {
   ColumnDef,
   flexRender,
@@ -19,7 +20,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends { id: string }, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
@@ -28,6 +29,12 @@ export function DataTable<TData, TValue>({
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  const navigate = useNavigate();
+
+  const handleRowClicked = (supplierId: string) => {
+    navigate(supplierId);
+  };
 
   return (
     <div className="rounded-md border">
@@ -39,7 +46,7 @@ export function DataTable<TData, TValue>({
                 return (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
-                      ? null
+                      ? "null"
                       : flexRender(
                           header.column.columnDef.header,
                           header.getContext()
@@ -54,7 +61,9 @@ export function DataTable<TData, TValue>({
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
+                onClick={() => handleRowClicked(row.original.id)}
                 key={row.id}
+                className="cursor-pointer hover:bg-gray-100"
                 data-state={row.getIsSelected() && "selected"}
               >
                 {row.getVisibleCells().map((cell) => (

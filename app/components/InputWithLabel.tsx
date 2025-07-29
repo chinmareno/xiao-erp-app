@@ -5,7 +5,7 @@ import { Label } from "./ui/label";
 type Props = {
   id: string;
   label: string;
-  type?: "text" | "password";
+  type?: "text" | "password"|"number";
   required?: boolean;
   error?: string;
   className?: string;

@@ -13,18 +13,22 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
-import { Link, useNavigate, useRouteLoaderData } from "@remix-run/react";
-import { useCompanyStore } from "~/hooks/useCompanyStore";
-import { DashboardLoader } from "../route";
+import { Link, useNavigate } from "@remix-run/react";
+import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+import { Company } from "@prisma/client";
 
-export function CompanySwitcher() {
+export function CompanySwitcher({
+  companies,
+  role,
+}: {
+  companies: Company[];
+  role: "SUPERADMIN" | "USER";
+}) {
   const { isMobile } = useSidebar();
 
   const navigate = useNavigate();
 
-  const loaderData = useRouteLoaderData<DashboardLoader>("routes/_dashboard");
-
-  const { selectedCompany, setSelectedCompany } = useCompanyStore();
+  const { company, setCompany } = useCompanyStore();
 
   return (
     <SidebarMenu>
@@ -37,10 +41,10 @@ export function CompanySwitcher() {
             >
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {selectedCompany?.name ?? "No Company Yet"}
+                  {company?.name ?? "No Company Yet"}
                 </span>
                 <span className="truncate text-xs">
-                  {selectedCompany?.industry ?? "N/A"}
+                  {company?.industry ?? "N/A"}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
@@ -56,12 +60,12 @@ export function CompanySwitcher() {
               Companies
             </DropdownMenuLabel>
 
-            {loaderData?.companies && loaderData.companies.length > 0 ? (
-              loaderData.companies.map((company) => (
+            {companies && companies.length > 0 ? (
+              companies.map((company) => (
                 <DropdownMenuItem
                   key={company.id}
                   onClick={() => {
-                    setSelectedCompany(company);
+                    setCompany(company);
                     navigate(company.id);
                   }}
                   className="gap-2 p-2"
@@ -75,7 +79,7 @@ export function CompanySwitcher() {
               </div>
             )}
 
-            {loaderData?.role === "SUPERADMIN" && (
+            {role === "SUPERADMIN" && (
               <>
                 <DropdownMenuItem asChild className="gap-2 p-2">
                   <Link to="/admin/company/join">

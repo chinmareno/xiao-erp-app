@@ -1,5 +1,5 @@
 import { ActionFunctionArgs } from "@remix-run/node";
-import { useActionData, useSubmit } from "@remix-run/react";
+import { useActionData, useRouteLoaderData, useSubmit } from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -7,11 +7,11 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { useCompanyStore } from "~/hooks/useCompanyStore";
-import { createCallerWithContext } from "../.server/root.server";
+import { createCallerWithContext } from "~/api/root.server";
 import { formDataParser } from "~/lib/formDataParser";
 import { z } from "zod";
 import { useEffect, useState } from "react";
+import { CompanyIdLoader } from "./_dashboard.$companyId";
 
 const InviteMemberSchema = z.object({
   companyId: z.string().min(1, "Company ID is required"),
@@ -26,17 +26,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DashboardIndex() {
-  const { selectedCompany } = useCompanyStore();
+  const companyLoaderData = useRouteLoaderData<CompanyIdLoader>(
+    "routes/_dashboard.$companyId"
+  );
+
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
 
   const [copied, setCopied] = useState(false);
 
   const handleInviteMember = () => {
-    if (!selectedCompany) return;
+    if (!companyLoaderData) return;
 
     const formData = new FormData();
-    formData.append("companyId", selectedCompany.id);
+    formData.append("companyId", companyLoaderData.userSelectedCompany.id);
     submit(formData, { method: "post", replace: true });
     setCopied(false);
   };
@@ -61,7 +64,7 @@ export default function DashboardIndex() {
     <section className="px-6 py-12 max-w-5xl mx-auto">
       <div className="rounded-3xl border bg-background shadow-xl p-10 sm:p-14">
         <h2 className="text-3xl font-extrabold mb-6 text-primary">
-          {selectedCompany?.name}
+          {companyLoaderData?.userSelectedCompany.name}
         </h2>
 
         <div className="space-y-4 text-base text-muted-foreground">
@@ -69,21 +72,23 @@ export default function DashboardIndex() {
             <span className="block text-sm font-semibold text-foreground mb-1">
               Industry
             </span>
-            {selectedCompany?.industry || "No industry specified"}
+            {companyLoaderData?.userSelectedCompany.industry ||
+              "No industry specified"}
           </p>
 
           <p>
             <span className="block text-sm font-semibold text-foreground mb-1">
               Description
             </span>
-            {selectedCompany?.desc || "No description provided"}
+            {companyLoaderData?.userSelectedCompany.desc ||
+              "No description provided"}
           </p>
 
           <p>
             <span className="block text-sm font-semibold text-foreground mb-1">
               Address
             </span>
-            {selectedCompany?.address || "N/A"}
+            {companyLoaderData?.userSelectedCompany.address || "N/A"}
           </p>
         </div>
       </div>
@@ -105,8 +110,10 @@ export default function DashboardIndex() {
                   Invite Link
                 </p>
                 <div
-                  className={`flex w-full border border-slate-400 relative items-center bg-muted pl-4 py-3 rounded-lg ${
-                    copied && "bg-green-100/50 border border-green-500"
+                  className={`flex w-full border  relative items-center  pl-4 py-3 rounded-lg ${
+                    copied
+                      ? "bg-green-100/50  border-green-500"
+                      : "border-slate-400 bg-muted"
                   }`}
                 >
                   <span className="truncate text-black">{actionData}</span>

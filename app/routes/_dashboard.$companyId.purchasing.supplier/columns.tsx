@@ -11,11 +11,19 @@ import {
 } from "~/components/ui/dropdown-menu";
 
 export type Supplier = {
-  id: string;
   name: string;
-  taxId: string;
-  address: string;
-  contact: string;
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  address: string | null;
+  taxId: string | null;
+  notes: string | null;
+  contact: {
+    name: string;
+    phone: string | null;
+    email: string | null;
+    notes: string | null;
+  }[];
 };
 
 export const columns: ColumnDef<Supplier>[] = [
@@ -37,8 +45,15 @@ export const columns: ColumnDef<Supplier>[] = [
     header: "Address",
   },
   {
-    accessorKey: "contact",
     header: "Contact",
+    cell: ({ row }) => {
+      const contactName = row.original.contact[0].name;
+      const contactPhone = row.original.contact[0].phone;
+      const contactEmail = row.original.contact[0].email;
+      const contact = `${contactName}/${contactPhone || contactEmail}`;
+
+      return contact;
+    },
   },
   {
     id: "actions",
