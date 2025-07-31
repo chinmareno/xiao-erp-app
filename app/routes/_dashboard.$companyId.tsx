@@ -8,18 +8,13 @@ export type CompanyIdLoader = typeof loader;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
-  console.log("Company ID from params:", companyId);
-  
+
   const caller = await createCallerWithContext(request, companyId);
 
   const userSelectedCompany = await caller.company.getByCompanyId();
   const userCompanyMember = await caller.companyMember.getByCompanyId();
 
-  console.log("userSelectedCompany:", userSelectedCompany);
-  console.log("userCompanyMember:", userCompanyMember);
-
   if (!userCompanyMember || !userSelectedCompany) {
-    console.log("Error: Missing data", { userCompanyMember: !!userCompanyMember, userSelectedCompany: !!userSelectedCompany });
     throw new Error("Not Found");
   }
 
@@ -32,6 +27,7 @@ export default function DashboardCompanyIdLayout() {
   useEffect(() => {
     setCompany(loaderData.userSelectedCompany);
     setPermissions(loaderData.userCompanyMember.permissions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaderData]);
   return <Outlet />;
 }

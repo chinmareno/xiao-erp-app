@@ -74,25 +74,35 @@ export const PORouter = createTRPCRouter({
         companyId: ctx.companyId,
       },
     });
-    if (!PONumberFormatData) {
-      const newPONumberFormatData = await ctx.db.pONumberFormat.create({
-        data: {
-          companyId: ctx.companyId,
-          currentNumber: 1,
-          prefix: "PO",
-        },
-      });
-      const PONumberFormatString = `${
-        newPONumberFormatData.prefix
-      }-${newPONumberFormatData.currentNumber.toString().padStart(6, "0")}`;
+    if (!PONumberFormatData) throw Error("Not Found");
 
-      return PONumberFormatString;
-    }
-
-    const PONumberFormatString = `${
-      PONumberFormatData.prefix
-    }-${PONumberFormatData.currentNumber.toString().padStart(6, "0")}`;
-
-    return PONumberFormatString;
+    return {
+      PONumberPrefix: PONumberFormatData.prefix,
+      PONumberCurrentNumber: PONumberFormatData.currentNumber
+        .toString()
+        .padStart(6, "0"),
+    };
   }),
+
+  changePONumberFormat: purchasingProcedure
+    .input(
+      z.object({
+        prefix: z.string().min(1, "Prefix is required"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { prefix } = input;
+
+      const PONumberFormatData = await ctx.db.pONumberFormat.update({
+        where: { companyId: ctx.companyId },
+        data: { prefix },
+      });
+
+      return {
+        PONumberPrefix: PONumberFormatData.prefix,
+        PONumberCurrentNumber: PONumberFormatData.currentNumber
+          .toString()
+          .padStart(6, "0"),
+      };
+    }),
 });

@@ -28,6 +28,7 @@ export const companyRouter = createTRPCRouter({
               role: "OWNER",
             },
           },
+          poNumberFormat: { create: { prefix: "PO" } },
         },
       });
     }),

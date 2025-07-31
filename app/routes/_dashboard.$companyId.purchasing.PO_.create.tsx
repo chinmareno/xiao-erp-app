@@ -1,14 +1,19 @@
-import { ActionFunctionArgs, redirect } from "@remix-run/node";
 import {
-  ClientActionFunctionArgs,
+  ActionFunctionArgs,
+  redirect,
+  LoaderFunctionArgs,
+} from "@remix-run/node";
+import {
   Form,
   useActionData,
+  useFetcher,
   useLoaderData,
+  useParams,
+  useRevalidator,
   useRouteLoaderData,
 } from "@remix-run/react";
 import { createCallerWithContext } from "~/api/root.server";
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formDataParser } from "~/lib/formDataParser";
 import { z } from "zod";
 import {
@@ -19,7 +24,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Input } from "~/components/ui/input";
-import { useKeyboard } from "~/lib/useKeyboard";
 import { Button } from "~/components/ui/button";
 import { CompanyIdLoader } from "./_dashboard.$companyId";
 import {
@@ -32,6 +36,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import InputWithLabel from "~/components/InputWithLabel";
+import { Label } from "~/components/ui/label";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -45,6 +51,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 const createPOSchema = z.object({
+  supplierName: z.string().min(1, "Supplier name is required"),
+  supplierAdress: z.string(),
   PONumber: z.string().min(1, "PO Number is required"),
   supplierId: z.string().min(1, "Supplier is required"),
   expectedFullReceivedDate: z.date().optional(),
@@ -85,17 +93,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return redirect(`/${companyId}/purchasing/PO`);
 }
 
-export async function clientAction({
-  request,
-  serverAction,
-}: ClientActionFunctionArgs) {
-  const requestClone = request.clone();
-  const formData = await formDataParser(requestClone);
+// export async function clientAction({
+//   request,
+//   serverAction,
+// }: ClientActionFunctionArgs) {
+//   const requestClone = request.clone();
+//   const formData = await formDataParser(requestClone);
 
-  const result = await createPOSchema.safeParseAsync(formData);
-  if (result.error) return { errors: result.error.format() };
-  return serverAction<typeof action>();
-}
+//   const result = await createPOSchema.safeParseAsync(formData);
+//   if (result.error) return { errors: result.error.format() };
+//   return serverAction<typeof action>();
+// }
 
 interface SupplierContact {
   id: string;
@@ -116,7 +124,12 @@ interface Supplier {
 }
 
 export default function POCreate() {
-  const actionData = useActionData<typeof action>();
+  const [prefixPO, setPrefixPO] = useState("");
+  const fetcherPOFormat = useFetcher();
+  const fetcherSupplierContact = useFetcher();
+
+  const params = useParams();
+
   const loaderData = useLoaderData<typeof loader>();
   const companyLoaderData = useRouteLoaderData<CompanyIdLoader>(
     "routes/_dashboard.$companyId"
@@ -155,10 +168,26 @@ export default function POCreate() {
     }
   };
 
+  const PONumberFormat = fetcherPOFormat.formData
+    ? `${fetcherPOFormat.formData.get("prefix")}-${
+        loaderData.POFormat.PONumberCurrentNumber
+      }`
+    : `${loaderData.POFormat.PONumberPrefix}-${loaderData.POFormat.PONumberCurrentNumber}`;
+  const revalidate = useRevalidator();
+
+  useEffect(() => {
+    if (selectedSupplier?.id && fetcherSupplierContact.state === "idle") {
+      const supplier = supplierMap.get(selectedSupplier.id);
+      setSelectedSupplier(supplier || null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcherSupplierContact.formData]);
+
   return (
     <>
       <div className="w-full justify-end flex">
-        <Dialog>
+        <button onClick={() => revalidate.revalidate()}> revalidate</button>
+        <Dialog onOpenChange={() => setPrefixPO("")}>
           <DialogTrigger className="mb-5 bg-zinc-50" asChild>
             <Button variant="outline">Change PO Number Prefix</Button>
           </DialogTrigger>
@@ -170,19 +199,41 @@ export default function POCreate() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center">
-              <Input className="text-end text-sm" />
-              <p className="ml-1 text-sm mt-1">-000001</p>
+              <Input
+                value={prefixPO}
+                onChange={(e) => setPrefixPO(e.currentTarget.value)}
+                className="text-end pr-1 text-sm"
+              />
+              <p className="text-sm">‑XXXXXX</p>
             </div>
-            <DialogFooter className="sm:justify-start">
+            <DialogFooter className="justify-end">
               <DialogClose asChild>
                 <Button type="button" variant="secondary">
                   Close
+                </Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  disabled={prefixPO.length === 0}
+                  onClick={() =>
+                    fetcherPOFormat.submit(
+                      {
+                        prefix: prefixPO,
+                        companyId: params.companyId as string,
+                      },
+                      { method: "POST", action: "/api/changePrefixPO" }
+                    )
+                  }
+                >
+                  Save
                 </Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
+
       <div className="max-w-6xl mx-auto p-6 bg-blue-50">
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -201,7 +252,7 @@ export default function POCreate() {
               </div>
               <div className="grid grid-cols-2">
                 <div className="px-4 py-2 text-center border-r border-gray-300 text-gray-900 bg-white">
-                  <div className="text-sm font-bold">{loaderData.POFormat}</div>
+                  <div className="text-sm font-bold">{PONumberFormat}</div>
                 </div>
                 <div className="px-4 py-2 text-center bg-white">
                   <div className="text-sm text-gray-700">
@@ -212,7 +263,8 @@ export default function POCreate() {
             </div>
           </div>
         </div>
-        <Form className="space-y-6">
+
+        <Form method="POST">
           <div className="border border-gray-300">
             <div className="bg-blue-900 text-white px-4 py-2">
               <h3 className="font-semibold text-sm">SUPPLIER INFORMATION</h3>
@@ -251,12 +303,93 @@ export default function POCreate() {
                   <SelectTrigger className="w-full border-0 p-0 h-auto">
                     <SelectValue placeholder="Select contact" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-48">
                     {selectedSupplier?.contact?.map((contact) => (
                       <SelectItem key={contact.id} value={contact.id}>
                         {contact.name}
                       </SelectItem>
                     ))}
+                    {selectedSupplier && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="border-t border-gray-200 my-1 cursor-pointer px-2 py-1.5 text-sm hover:bg-blue-100 text-blue-600">
+                            + Add new contact
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Supplier Contact</DialogTitle>
+                            <DialogDescription>
+                              Fill in the contact details for the selected
+                              supplier.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div>
+                            <fetcherSupplierContact.Form
+                              method="POST"
+                              action="/api/addSupplierContact"
+                            >
+                              <Input
+                                readOnly
+                                className="hidden"
+                                name="companyId"
+                                value={params.companyId as string}
+                              />
+                              <Input
+                                readOnly
+                                className="hidden"
+                                name="supplierId"
+                                value={selectedSupplier.id}
+                              />
+
+                              <InputWithLabel
+                                id="contactName"
+                                label="Contact name"
+                              />
+                              <Label
+                                htmlFor="contactPhone"
+                                className="text-sm font-medium"
+                              >
+                                Phone Number
+                              </Label>
+                              <Input
+                                name="contactPhone"
+                                onInput={(e) => {
+                                  e.currentTarget.value =
+                                    e.currentTarget.value.replace(
+                                      /[^0-9+\-() ]/g,
+                                      ""
+                                    );
+                                }}
+                              />
+                              <p className="text-xs text-muted-foreground italic">
+                                Include country code for international numbers.
+                              </p>
+                              <InputWithLabel id="contactEmail" label="Email" />
+                              <InputWithLabel
+                                id="contactNotes"
+                                label="Notes"
+                                inputClassName=" pt-2 text-wrap pb-20"
+                                multiline
+                              />
+                              <Button
+                                type="submit"
+                                className="mt-4 bg-blue-600 text-white"
+                              >
+                                Add new contact
+                              </Button>
+                            </fetcherSupplierContact.Form>
+                          </div>
+                          <DialogFooter className="sm:justify-start">
+                            <DialogClose asChild>
+                              <Button type="button" variant="secondary">
+                                Close
+                              </Button>
+                            </DialogClose>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -269,10 +402,22 @@ export default function POCreate() {
               <div className="p-3 border-r border-gray-300">
                 <div className="text-xs text-gray-600 mb-1">CONTACT NO</div>
                 <div className="text-sm">{selectedContact?.phone || "-"}</div>
+                <Input
+                  readOnly
+                  className="hidden"
+                  name="supplierContactPhone"
+                  value={selectedContact?.phone || ""}
+                />
               </div>
               <div className="p-3">
                 <div className="text-xs text-gray-600 mb-1">EMAIL ADDRESS</div>
                 <div className="text-sm">{selectedContact?.email || "-"}</div>
+                <Input
+                  readOnly
+                  className="hidden"
+                  name="supplierContactEmail"
+                  value={selectedContact?.email || ""}
+                />
               </div>
             </div>
           </div>
@@ -288,10 +433,21 @@ export default function POCreate() {
                 <div className="text-sm font-medium">
                   {companyLoaderData?.userSelectedCompany?.name || "Loading..."}
                 </div>
+                <Input
+                  readOnly
+                  className="hidden"
+                  name="customerName"
+                  value={companyLoaderData?.userSelectedCompany?.name || ""}
+                />
               </div>
               <div className="p-3">
                 <div className="text-xs text-gray-600 mb-1">CONTACT PERSON</div>
-                <Input type="text" placeholder="Contact Person" />
+                <Input
+                  required
+                  name="customerContactName"
+                  type="text"
+                  placeholder="Contact Person"
+                />
               </div>
             </div>
             <div className="p-3 border-b border-gray-300">
@@ -300,15 +456,37 @@ export default function POCreate() {
                 {companyLoaderData?.userSelectedCompany?.address ||
                   "Loading..."}
               </div>
+              <Input
+                readOnly
+                className="hidden"
+                name="customerAddress"
+                value={companyLoaderData?.userSelectedCompany?.address || ""}
+              />
             </div>
             <div className="grid grid-cols-2">
               <div className="p-3 border-r border-gray-300">
                 <div className="text-xs text-gray-600 mb-1">CONTACT NO</div>
-                <Input type="text" placeholder="Contact Number" />
+                <Input
+                  required
+                  name="customerContactPhone"
+                  type="text"
+                  placeholder="Contact Number"
+                  onInput={(e) => {
+                    e.currentTarget.value = e.currentTarget.value.replace(
+                      /[^0-9+\-() ]/g,
+                      ""
+                    );
+                  }}
+                />
               </div>
               <div className="p-3">
                 <div className="text-xs text-gray-600 mb-1">EMAIL ADDRESS</div>
-                <Input type="email" placeholder="Email Address" />
+                <Input
+                  required
+                  name="customerContactEmail"
+                  type="email"
+                  placeholder="Email Address"
+                />
               </div>
             </div>
           </div>
@@ -317,6 +495,9 @@ export default function POCreate() {
           <div className="text-center py-8 text-gray-500">
             Items table and totals section will be added next...
           </div>
+          <Button type="submit" className="bg-blue-600 text-white">
+            Submit Purchase Order
+          </Button>
         </Form>
       </div>
     </>

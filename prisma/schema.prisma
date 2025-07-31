@@ -246,9 +246,19 @@ model PurchaseOrder {
   id               String              @id @default(cuid())
   supplierId       String
   supplier         Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  contactId        String
   companyId        String
   company          Company            @relation(fields: [companyId ], references: [id], onDelete: Cascade)
   @@unique([companyId, PONumber])
+  supplierContactName      String
+   supplierContactEmail     String?
+   supplierContactPhone     String?
+   supplierAdress     String
+   customerContactName      String
+  customerContactEmail     String?
+  customerContactPhone     String?
+  customerAddress     String
+
   PONumber          String
   status           PurchaseOrderStatus @default(UNRECEIVED)
   isActive         Boolean @default(true)

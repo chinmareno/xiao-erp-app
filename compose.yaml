@@ -6,8 +6,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: xiao-erp
-    ports:
-      - "5433:5432"
 
   app:
     build: .

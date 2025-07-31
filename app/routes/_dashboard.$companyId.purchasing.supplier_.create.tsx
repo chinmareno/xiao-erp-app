@@ -12,6 +12,8 @@ import { z } from "zod";
 import FormHeader from "~/components/ui/FormHeader";
 import { createCallerWithContext } from "~/api/root.server";
 import { formDataParser } from "~/lib/formDataParser";
+import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
 
 const npwpRegex = /^\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}$/;
 
@@ -24,8 +26,8 @@ export const supplierFormSchema = z
       .pipe(
         z.union([z.string().regex(npwpRegex, "Invalid NPWP format"), z.null()])
       ),
-    address: z.string().optional(),
-    notes: z.string().optional(),
+    address: z.string().min(1, "Address is required"),
+    notes: z.string(),
 
     contactName: z
       .string()
@@ -79,8 +81,6 @@ export const supplierFormSchema = z
       path: ["contactName"],
     }
   );
-
-type SupplierForm = z.infer<typeof supplierFormSchema>;
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await formDataParser(request);
@@ -142,6 +142,7 @@ export default function PurchasingSupplierCreate() {
         <InputWithLabel
           id="address"
           label="Address"
+          required
           error={errors?.address?._errors[0]}
           className={SUPPLIER_INPUT_CLASSNAME}
         />
@@ -167,13 +168,26 @@ export default function PurchasingSupplierCreate() {
           error={errors?.contactName?._errors[0]}
           className={CONTACT_INPUT_CLASSNAME}
         />
-        <InputWithLabel
-          id="contactPhone"
-          label="Phone Number"
-          error={errors?.contactPhone?._errors[0]}
-          className={CONTACT_INPUT_CLASSNAME}
-          helperText="Include country code for international numbers."
-        />
+        <div className={CONTACT_INPUT_CLASSNAME}>
+          <Label htmlFor="contactPhone" className="text-sm font-medium">
+            Phone Number
+          </Label>
+          <Input
+            name="contactPhone"
+            onInput={(e) => {
+              e.currentTarget.value = e.currentTarget.value.replace(
+                /[^0-9+\-() ]/g,
+                ""
+              );
+            }}
+          />
+          <p className="text-xs text-muted-foreground italic">
+            Include country code for international numbers.
+          </p>
+          <p className="text-sm text-red-600">
+            {errors?.contactPhone?._errors[0]}
+          </p>
+        </div>
         <InputWithLabel
           id="contactEmail"
           label="Email"

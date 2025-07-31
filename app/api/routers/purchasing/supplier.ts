@@ -13,7 +13,7 @@ const createSupplierSchema = z
         z.union([z.string().regex(npwpRegex, "Invalid NPWP format"), z.null()])
       )
       .nullable(),
-    address: z.string().optional(),
+    address: z.string(),
     notes: z.string().optional(),
 
     contactName: z.string().nullable(),
@@ -176,5 +176,31 @@ export const supplierRouter = createTRPCRouter({
       }));
 
       return supplierPOsWithTotalItemTypes;
+    }),
+
+  addSupplierContact: purchasingProcedure
+    .input(
+      z.object({
+        supplierId: z.string().min(1, "Supplier is required"),
+        contactName: z.string(),
+        contactPhone: z.string(),
+        contactEmail: z.string(),
+        contactNotes: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.supplier.update({
+        where: { id: input.supplierId },
+        data: {
+          contact: {
+            create: {
+              name: input.contactName,
+              phone: input.contactPhone,
+              email: input.contactEmail,
+              notes: input.contactNotes,
+            },
+          },
+        },
+      });
     }),
 });
