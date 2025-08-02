@@ -182,10 +182,10 @@ export const supplierRouter = createTRPCRouter({
     .input(
       z.object({
         supplierId: z.string().min(1, "Supplier is required"),
-        contactName: z.string(),
-        contactPhone: z.string(),
-        contactEmail: z.string(),
-        contactNotes: z.string(),
+        contactName: z.string().min(1, "Contact name is required"),
+        contactPhone: z.string().nullable(),
+        contactEmail: z.string().nullable(),
+        contactNotes: z.string().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {

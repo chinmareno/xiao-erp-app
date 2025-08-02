@@ -39,7 +39,7 @@ export const supplierFormSchema = z
 
       .refine(
         (val) =>
-          val === null || val === undefined || /^[0-9+\-\s()]+$/.test(val),
+          val === null || val === undefined || /^[0-9+\-() ]+$/.test(val),
         {
           message: "Invalid phone number",
         }
