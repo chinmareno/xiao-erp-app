@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import {
-  ItemsInformation,
+  ItemsInformationTest,
   Product,
   PurchaseOrderItem,
-} from "./ItemsInformation";
+} from "./ItemsInformationTest";
 
 // Mock data for products
 const mockProducts: Product[] = [

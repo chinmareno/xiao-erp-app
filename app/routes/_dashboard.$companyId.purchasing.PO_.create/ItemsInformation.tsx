@@ -8,188 +8,362 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Trash2, Plus } from "lucide-react";
+import { useState } from "react";
+import { useKeyboard } from "~/lib/useKeyboard";
+import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 
-export interface Product {
-  id: string;
+export type Item = {
   name: string;
-  code?: string; // Made optional since it might not be available from the API
-  sku?: string; // Alternative field that might contain the code
-}
+  quantity: string;
+  unit: string;
+  price: string;
+  total: number;
+};
 
-export interface PurchaseOrderItem {
-  id: string;
-  supplierProductId: string;
-  quantity: number;
-  itemCost: number;
-}
+const supplierProduct = [
+  { id: "1", name: "Wireless Earbuds", sku: "SKU12345" },
+  { id: "2", name: "Bluetooth Speaker", sku: "SKU12346" },
+  { id: "3", name: "Smart Watch", sku: "SKU12347" },
+  { id: "4", name: "Phone Case", sku: "SKU12348" },
+  { id: "5", name: "Screen Protector", sku: "SKU12349" },
+];
 
-interface ItemsInformationProps {
-  items: PurchaseOrderItem[];
-  products: Product[];
-  onAddItem: () => void;
-  onRemoveItem: (id: string) => void;
-  onUpdateItem: (
-    id: string,
-    field: keyof PurchaseOrderItem,
-    value: any
-  ) => void;
-  calculateTotal: () => number;
-}
+export const ItemsInformation = () => {
+  const [items, setItems] = useState<Item[]>([
+    { name: "", quantity: "", unit: "pcs", price: "", total: 0 },
+  ]);
+  const [priceCurrency, setPriceCurrency] = useState("idr");
+  const [discount, setDiscount] = useState(0);
+  const [tax, setTax] = useState(0);
 
-export function ItemsInformation({
-  items,
-  products,
-  onAddItem,
-  onRemoveItem,
-  onUpdateItem,
-  calculateTotal,
-}: ItemsInformationProps) {
+  const addItem = () => {
+    setItems((prev) => [
+      ...prev,
+      { name: "", quantity: "", unit: "pcs", price: "", total: 0 },
+    ]);
+  };
+
+  const removeItem = (index: number) => {
+    const itemCopy = [...items];
+    itemCopy.splice(index, 1);
+    setItems(itemCopy);
+  };
+
+  const handleSelectItem = (index: number, value: string) => {
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i === index) {
+          return { ...item, name: value };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleInputQuantity = (index: number, value: string) => {
+    const formattedValue = thousandSeparatorFormatter(value);
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i === index) {
+          return { ...item, quantity: formattedValue };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleInputUnit = (index: number, value: string) => {
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i === index) {
+          return { ...item, unit: value };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleInputPrice = (index: number, value: string) => {
+    const isIDR = priceCurrency === "idr";
+    const formattedValue = thousandSeparatorFormatter(value);
+
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i === index) {
+          return { ...item, price: isIDR ? formattedValue : value };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleSelectCurrency = (value: string) => {
+    setPriceCurrency(value);
+    setItems((prev) =>
+      prev.map((item) => ({
+        ...item,
+        price: "",
+      }))
+    );
+  };
+
+  const itemTotalParser = (itemPrice: string, itemQuantity: string) => {
+    if (!itemPrice || !itemQuantity) return "0";
+    const isIDR = priceCurrency === "idr";
+
+    const price = isIDR
+      ? Number(itemPrice.replace(/\,/g, ""))
+      : parseFloat(itemPrice);
+
+    const quantity = Number(itemQuantity.replace(/\,/g, ""));
+
+    const total = isIDR
+      ? thousandSeparatorFormatter(String(price * quantity))
+      : String(price * quantity);
+
+    return total;
+  };
+
+  const subTotalParser = () => {
+    const total = items.reduce((acc, item) => {
+      if (!item.price || !item.quantity) return acc;
+      const itemPrice = item.price.replace(/\,/g, "");
+
+      const itemQuantity = item.quantity.replace(/\,/g, "");
+
+      const price =
+        priceCurrency === "idr" ? Number(itemPrice) : parseFloat(itemPrice);
+
+      const quantity = Number(itemQuantity);
+      return acc + price * quantity;
+    }, 0);
+
+    return priceCurrency === "idr"
+      ? thousandSeparatorFormatter(String(total))
+      : String(total);
+  };
+
+  const discountParser = () => {
+    const subtotal = subTotalParser().replace(/\,/g, "");
+    const discountAmount = (Number(subtotal) * discount) / 100;
+
+    return priceCurrency === "idr"
+      ? thousandSeparatorFormatter(String(discountAmount))
+      : String(discountAmount);
+  };
+
+  const taxParser = () => {
+    const subtotal = subTotalParser().replace(/\,/g, "");
+    const discountAmount = (Number(subtotal) * tax) / 100;
+
+    return priceCurrency === "idr"
+      ? thousandSeparatorFormatter(String(discountAmount))
+      : String(discountAmount);
+  };
+
+  const totalParser = () => {
+    const subtotal = subTotalParser().replace(/\,/g, "");
+    const discountAmount = (Number(subtotal) * discount) / 100;
+    const taxAmount = (Number(subtotal) * tax) / 100;
+
+    const total = Number(subtotal) - discountAmount - taxAmount;
+
+    return priceCurrency === "idr"
+      ? thousandSeparatorFormatter(String(Math.ceil(total)))
+      : String(total);
+  };
   return (
-    <div className="mt-6">
-      {/* Items Header */}
+    <div>
       <div className="bg-blue-600 text-white p-3 font-semibold">ITEMS</div>
 
-      {/* Items Table */}
       <div className="border border-blue-200 bg-white">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-2 p-3 bg-blue-100 border-b border-blue-200 font-semibold text-sm">
-          <div className="col-span-1">Code</div>
-          <div className="col-span-4">Product Description</div>
+        <div className="grid  items-center grid-cols-12 gap-2 p-3 bg-blue-100 border-b border-blue-200 font-semibold text-sm">
+          <div className="col-span-1 ">No.</div>
+
+          <div className="col-span-2">Name</div>
+
           <div className="col-span-2">Quantity</div>
-          <div className="col-span-2">Unit Price</div>
-          <div className="col-span-2">Amount</div>
-          <div className="col-span-1">Action</div>
-        </div>
 
-        {/* Items Rows */}
-        {items.map((item, index) => {
-          const selectedProduct = products.find(
-            (p) => p.id === item.supplierProductId
-          );
-          const amount = item.quantity * item.itemCost;
+          <div className="col-span-2">Unit</div>
 
-          return (
-            <div
-              key={item.id}
-              className="grid grid-cols-12 gap-2 p-3 border-b border-blue-100 items-center"
+          <div className="col-span-2">
+            <Select
+              value={priceCurrency}
+              onValueChange={(val) => handleSelectCurrency(val)}
             >
-              {/* Code */}
-              <div className="col-span-1">
-                <span className="text-sm text-gray-600">
-                  {selectedProduct?.code || selectedProduct?.sku || "-"}
-                </span>
-              </div>
+              <SelectTrigger className="pl-0 rounded-none shadow-none py-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="idr">Price (IDR)</SelectItem>
+                <SelectItem value="yuan">Price (¥)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-              {/* Product Description */}
-              <div className="col-span-4">
-                <Select
-                  value={item.supplierProductId}
-                  onValueChange={(value) =>
-                    onUpdateItem(item.id, "supplierProductId", value)
-                  }
-                  name={`items[${index}].supplierProductId`}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="col-span-2 text-right mr-3 self-center">
+            {priceCurrency === "idr" ? "Total (IDR)" : "Total (¥)"}
+          </div>
 
-              {/* Quantity */}
-              <div className="col-span-2">
-                <Input
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) =>
-                    onUpdateItem(
-                      item.id,
-                      "quantity",
-                      parseInt(e.target.value) || 1
-                    )
-                  }
-                  name={`items[${index}].quantity`}
-                  className="w-full"
-                />
-              </div>
+          <div className="col-span-1 self-center">Action</div>
+        </div>
+      </div>
 
-              {/* Unit Price */}
-              <div className="col-span-2">
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={item.itemCost}
-                  onChange={(e) =>
-                    onUpdateItem(
-                      item.id,
-                      "itemCost",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  name={`items[${index}].itemCost`}
-                  className="w-full"
-                />
-              </div>
+      <div className="border">
+        {items.map((item, index) => (
+          <div
+            key={item.name + index}
+            className="grid grid-cols-12 gap-2 p-3 text-sm border-b border-blue-800"
+          >
+            <div className="col-span-1 self-center">{`${index + 1})`}</div>
 
-              {/* Amount */}
-              <div className="col-span-2">
-                <div className="p-2 bg-gray-50 rounded text-right font-medium">
-                  {amount.toLocaleString("id-ID")}
-                </div>
-              </div>
-
-              {/* Action */}
-              <div className="col-span-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onRemoveItem(item.id)}
-                  disabled={items.length === 1}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="col-span-2">
+              <Select
+                required
+                value={item.name || undefined}
+                onValueChange={(val) => handleSelectItem(index, val)}
+              >
+                <SelectTrigger className="border-none rounded-none pl-0 shadow-none py-2">
+                  <SelectValue placeholder="Select Product" />
+                </SelectTrigger>
+                <SelectContent>
+                  {supplierProduct.map((product) => (
+                    <SelectItem key={product.sku} value={product.name}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          );
-        })}
 
-        {/* Add Item Button */}
-        <div className="p-3 border-t border-blue-200">
+            <div className="col-span-2">
+              <Input
+                required
+                className="border-none rounded-none pl-1 shadow-none py-2"
+                value={item.quantity}
+                onChange={(e) =>
+                  handleInputQuantity(index, e.currentTarget.value)
+                }
+                onInput={(e) => {
+                  e.currentTarget.value = e.currentTarget.value.replace(
+                    /\D/g,
+                    ""
+                  );
+                }}
+                placeholder="Enter Quantity"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <Input
+                required
+                className="border-none rounded-none pl-1 shadow-none py-2"
+                value={item.unit || undefined}
+                onChange={(e) => handleInputUnit(index, e.currentTarget.value)}
+                placeholder="Unit"
+              />
+            </div>
+            <div className="col-span-2">
+              <Input
+                required
+                className="border-none rounded-none pl-1 shadow-none py-2"
+                value={item.price || undefined}
+                placeholder="Enter Price"
+                onChange={(e) => handleInputPrice(index, e.currentTarget.value)}
+                onInput={(e) => {
+                  priceCurrency === "idr"
+                    ? (e.currentTarget.value = e.currentTarget.value.replace(
+                        /\D/g,
+                        ""
+                      ))
+                    : (e.currentTarget.value = e.currentTarget.value
+                        .replace(/[^0-9.]/g, "")
+                        .replace(/^([0-9]*\.[0-9]*)|\./g, "$1")
+                        .replace(/^\./, ""));
+                }}
+              />
+            </div>
+            <div className="col-span-2 mr-3 text-right self-center">
+              <p> {itemTotalParser(item.price, item.quantity)}</p>
+            </div>
+            <div className="col-span-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                type="button"
+                onClick={() => removeItem(index)}
+                disabled={items.length <= 1}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 " />
+              </Button>
+            </div>
+          </div>
+        ))}
+
+        <div className="flex mt-5">
           <Button
             type="button"
             variant="outline"
-            onClick={onAddItem}
-            className="flex items-center gap-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+            onClick={addItem}
+            className="flex items-center mb-4 mr-80 ml-4 gap-2 text-blue-600 border-blue-300 hover:bg-blue-50"
           >
             <Plus className="h-4 w-4" />
             Add Item
           </Button>
-        </div>
 
-        {/* Total Section */}
-        <div className="bg-blue-50 p-3 border-t border-blue-200">
-          <div className="flex justify-end">
-            <div className="w-64">
-              <div className="flex justify-between items-center font-semibold text-lg">
-                <span>Total Amount (IDR):</span>
-                <span className="text-blue-600">
-                  {calculateTotal().toLocaleString("id-ID")}
-                </span>
-              </div>
-            </div>
+          <div className="ml-auto mr-3 flex flex-col text-right divide-y-2 items-center">
+            <p className="font-semibold items-center w-full grid-cols-4 grid text-lg">
+              <span className="col-span-1 text-left">
+                Subtotal {priceCurrency === "idr" ? "(IDR)" : "(¥)"}
+              </span>
+              <span className="col-span-3 pr-1 ml-auto my-2">
+                {subTotalParser()}
+              </span>
+            </p>
+
+            <p className="grid-cols-4 grid items-center w-full text-lg">
+              <span className="col-span-1 text-left my-2"> Discount (%)</span>
+              <Input
+                name="discount"
+                onChange={(e) => setDiscount(Number(e.currentTarget.value))}
+                placeholder="Enter Discount"
+                onInput={(e) => {
+                  e.currentTarget.value = e.currentTarget.value.replace(
+                    /\D/g,
+                    ""
+                  );
+                }}
+                maxLength={3}
+                className="col-span-1 text-lg flex pr-1 border-none rounded-none pl-1 shadow-none py-2"
+              />
+              <span className="col-span-2">{discountParser()}</span>
+            </p>
+
+            <p className="ml-auto w-full items-center text-lg grid-cols-4 grid">
+              <span className="col-span-1 text-left my-2"> Tax (%)</span>
+              <Input
+                name="tax"
+                onChange={(e) => setTax(Number(e.currentTarget.value))}
+                onInput={(e) => {
+                  e.currentTarget.value = e.currentTarget.value.replace(
+                    /\D/g,
+                    ""
+                  );
+                }}
+                maxLength={3}
+                placeholder="Enter Tax"
+                className="col-span-1 pr-1 text-lg border-none rounded-none pl-1 shadow-none py-2"
+              />
+              <span className="col-span-2 ">{taxParser()}</span>
+            </p>
+            <p className="ml-auto w-full items-center grid-cols-3 grid font-semibold text-lg">
+              <span className="col-span-1 text-left my-2">Total Amount</span>
+              <span className="col-span-2 pr-1 ml-auto">{totalParser()}</span>
+            </p>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};

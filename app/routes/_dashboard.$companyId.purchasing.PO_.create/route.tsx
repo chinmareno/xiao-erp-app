@@ -46,8 +46,8 @@ import { SupplierInformation } from "./SupplierInformation";
 import { CustomerInformation } from "./CustomerInformation";
 import { POHeader } from "./POHeader";
 import { ChangePONumberPrefix } from "./ChangePONumberPrefix";
-import { ItemsInformation, type PurchaseOrderItem } from "./ItemsInformation";
-import { Test } from "./Test";
+import { type PurchaseOrderItem } from "./ItemsInformationTest";
+import { ItemsInformation } from "./ItemsInformation";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -176,16 +176,7 @@ export default function POCreate() {
           <SupplierInformation loaderData={loaderData} params={params} />
 
           <CustomerInformation />
-          <Test />
-
-          <ItemsInformation
-            items={items}
-            products={loaderData.products}
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onUpdateItem={handleUpdateItem}
-            calculateTotal={calculateTotal}
-          />
+          <ItemsInformation />
         </div>
         <div className="mt-8 ml-16 gap-7 flex">
           <Button type="button" variant="secondary" asChild>
