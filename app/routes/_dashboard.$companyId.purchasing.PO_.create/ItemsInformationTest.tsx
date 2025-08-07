@@ -31,6 +31,7 @@ interface ItemsInformationProps {
   onUpdateItem: (
     id: string,
     field: keyof PurchaseOrderItem,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any
   ) => void;
   calculateTotal: () => number;

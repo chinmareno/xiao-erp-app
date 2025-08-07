@@ -184,6 +184,7 @@ model Item {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   supplierProducts  SupplierProduct[]
+  purchaseOrderItems PurchaseOrderItem[]
 }
 
 model SupplierProduct {
@@ -192,13 +193,12 @@ model SupplierProduct {
   item               Item                @relation(fields: [itemId], references: [id], onDelete: Cascade)
   supplierId         String
   supplier           Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  costIdr            Float
-  costYuan           Float
+  price              String
+  priceCurrency      String
   image              String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   stockItems         StockItem[]
-  purchaseOrderItems PurchaseOrderItem[]
 }
 
 model Warehouse {
@@ -246,18 +246,21 @@ model PurchaseOrder {
   id               String              @id @default(cuid())
   supplierId       String
   supplier         Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  contactId        String
+  supplierContactId        String
   companyId        String
   company          Company            @relation(fields: [companyId ], references: [id], onDelete: Cascade)
   @@unique([companyId, PONumber])
+  
+  supplierName             String
   supplierContactName      String
-   supplierContactEmail     String?
-   supplierContactPhone     String?
-   supplierAdress     String
-   customerContactName      String
+  supplierContactEmail     String?
+  supplierContactPhone     String?
+  supplierAdress           String
+  customerName             String
+  customerContactName      String
   customerContactEmail     String?
   customerContactPhone     String?
-  customerAddress     String
+  customerAddress          String
 
   PONumber          String
   status           PurchaseOrderStatus @default(UNRECEIVED)
@@ -282,8 +285,8 @@ model PurchaseOrderItem {
   id              String   @id @default(cuid())
   purchaseOrderId String
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  supplierProductId       String
-  supplierProduct         SupplierProduct  @relation(fields: [supplierProductId], references: [id], onDelete: Cascade)
+  itemId      String
+  item         Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
   quantity        Int
   costYuan        Float
   costIdr         Float

@@ -1,5 +1,5 @@
 import type { FetcherWithComponents, Params } from "@remix-run/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { useKeyboard } from "~/lib/useKeyboard";
 
 type Props = {
   params: Readonly<Params<string>>;
@@ -20,6 +21,7 @@ type Props = {
 
 export const ChangePONumberPrefix = ({ fetcherPOFormat, params }: Props) => {
   const [prefixPO, setPrefixPO] = useState("");
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   const handleSubmit = () =>
     fetcherPOFormat.submit(
@@ -29,6 +31,11 @@ export const ChangePONumberPrefix = ({ fetcherPOFormat, params }: Props) => {
       },
       { method: "POST", action: "/api/changePrefixPO" }
     );
+
+  useKeyboard(() => {
+    if (prefixPO.length === 0) return;
+    submitRef.current?.click();
+  }, "Enter");
 
   return (
     <div className="w-full justify-end flex">
@@ -62,6 +69,7 @@ export const ChangePONumberPrefix = ({ fetcherPOFormat, params }: Props) => {
                 type="button"
                 disabled={prefixPO.length === 0}
                 onClick={handleSubmit}
+                ref={submitRef}
               >
                 Save
               </Button>

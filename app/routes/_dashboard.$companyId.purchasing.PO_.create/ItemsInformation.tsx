@@ -8,38 +8,81 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Trash2, Plus } from "lucide-react";
-import { useState } from "react";
-import { useKeyboard } from "~/lib/useKeyboard";
+import { useEffect, useState } from "react";
 import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
+import { type Params, useFetcher } from "@remix-run/react";
+import { GetSupplierProductsBySupplierIdActionData } from "../api.getSupplierProductsBySupplierId";
 
 export type Item = {
-  name: string;
+  id: string | undefined;
   quantity: string;
   unit: string;
   price: string;
-  total: number;
 };
 
-const supplierProduct = [
-  { id: "1", name: "Wireless Earbuds", sku: "SKU12345" },
-  { id: "2", name: "Bluetooth Speaker", sku: "SKU12346" },
-  { id: "3", name: "Smart Watch", sku: "SKU12347" },
-  { id: "4", name: "Phone Case", sku: "SKU12348" },
-  { id: "5", name: "Screen Protector", sku: "SKU12349" },
-];
+type SupplierProducts = {
+  id: string;
+  name: string;
+  price: string;
+  priceCurrency: string;
+  createdAt: Date;
+  updatedAt: Date;
+}[];
 
-export const ItemsInformation = () => {
-  const [items, setItems] = useState<Item[]>([
-    { name: "", quantity: "", unit: "pcs", price: "", total: 0 },
-  ]);
-  const [priceCurrency, setPriceCurrency] = useState("idr");
+type Props = {
+  items: Item[];
+  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  selectedSupplierId: string | null;
+  params: Readonly<Params<string>>;
+};
+
+export const ItemsInformation = ({
+  items,
+  setItems,
+  selectedSupplierId,
+  params,
+}: Props) => {
+  const [priceCurrency, setPriceCurrency] = useState("IDR");
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
+  const [supplierProduct, setSupplierProduct] = useState<SupplierProducts>([]);
+
+  const fetcherSupplierProducts = useFetcher();
+
+  useEffect(() => {
+    if (!selectedSupplierId) return;
+    console.log("subm,t");
+    fetcherSupplierProducts.submit(
+      {
+        supplierId: selectedSupplierId,
+        companyId: params.companyId as string,
+      },
+      { action: "/api/getSupplierProductsBySupplierId", method: "POST" }
+    );
+  }, [selectedSupplierId]);
+
+  useEffect(() => {
+    console.log(fetcherSupplierProducts.data);
+    if (
+      fetcherSupplierProducts.data &&
+      fetcherSupplierProducts.state === "idle"
+    ) {
+      console.log("submitted,t");
+      const { products } =
+        fetcherSupplierProducts.data as GetSupplierProductsBySupplierIdActionData;
+      setSupplierProduct(products);
+    }
+  }, [fetcherSupplierProducts.formData]);
 
   const addItem = () => {
     setItems((prev) => [
       ...prev,
-      { name: "", quantity: "", unit: "pcs", price: "", total: 0 },
+      {
+        id: undefined,
+        quantity: "",
+        unit: "pcs",
+        price: "",
+      },
     ]);
   };
 
@@ -53,7 +96,7 @@ export const ItemsInformation = () => {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i === index) {
-          return { ...item, name: value };
+          return { ...item, id: value };
         }
         return item;
       })
@@ -84,7 +127,7 @@ export const ItemsInformation = () => {
   };
 
   const handleInputPrice = (index: number, value: string) => {
-    const isIDR = priceCurrency === "idr";
+    const isIDR = priceCurrency === "IDR";
     const formattedValue = thousandSeparatorFormatter(value);
 
     setItems((prev) =>
@@ -109,13 +152,13 @@ export const ItemsInformation = () => {
 
   const itemTotalParser = (itemPrice: string, itemQuantity: string) => {
     if (!itemPrice || !itemQuantity) return "0";
-    const isIDR = priceCurrency === "idr";
+    const isIDR = priceCurrency === "IDR";
 
     const price = isIDR
-      ? Number(itemPrice.replace(/\,/g, ""))
+      ? Number(itemPrice.replace(/,/g, ""))
       : parseFloat(itemPrice);
 
-    const quantity = Number(itemQuantity.replace(/\,/g, ""));
+    const quantity = Number(itemQuantity.replace(/,/g, ""));
 
     const total = isIDR
       ? thousandSeparatorFormatter(String(price * quantity))
@@ -127,54 +170,54 @@ export const ItemsInformation = () => {
   const subTotalParser = () => {
     const total = items.reduce((acc, item) => {
       if (!item.price || !item.quantity) return acc;
-      const itemPrice = item.price.replace(/\,/g, "");
+      const itemPrice = item.price.replace(/,/g, "");
 
-      const itemQuantity = item.quantity.replace(/\,/g, "");
+      const itemQuantity = item.quantity.replace(/,/g, "");
 
       const price =
-        priceCurrency === "idr" ? Number(itemPrice) : parseFloat(itemPrice);
+        priceCurrency === "IDR" ? Number(itemPrice) : parseFloat(itemPrice);
 
       const quantity = Number(itemQuantity);
       return acc + price * quantity;
     }, 0);
 
-    return priceCurrency === "idr"
+    return priceCurrency === "IDR"
       ? thousandSeparatorFormatter(String(total))
       : String(total);
   };
 
   const discountParser = () => {
-    const subtotal = subTotalParser().replace(/\,/g, "");
+    const subtotal = subTotalParser().replace(/,/g, "");
     const discountAmount = (Number(subtotal) * discount) / 100;
 
-    return priceCurrency === "idr"
+    return priceCurrency === "IDR"
       ? thousandSeparatorFormatter(String(discountAmount))
       : String(discountAmount);
   };
 
   const taxParser = () => {
-    const subtotal = subTotalParser().replace(/\,/g, "");
+    const subtotal = subTotalParser().replace(/,/g, "");
     const discountAmount = (Number(subtotal) * tax) / 100;
 
-    return priceCurrency === "idr"
+    return priceCurrency === "IDR"
       ? thousandSeparatorFormatter(String(discountAmount))
       : String(discountAmount);
   };
 
   const totalParser = () => {
-    const subtotal = subTotalParser().replace(/\,/g, "");
+    const subtotal = subTotalParser().replace(/,/g, "");
     const discountAmount = (Number(subtotal) * discount) / 100;
     const taxAmount = (Number(subtotal) * tax) / 100;
 
     const total = Number(subtotal) - discountAmount - taxAmount;
 
-    return priceCurrency === "idr"
+    return priceCurrency === "IDR"
       ? thousandSeparatorFormatter(String(Math.ceil(total)))
       : String(total);
   };
   return (
     <div>
-      <div className="bg-blue-600 text-white p-3 font-semibold">ITEMS</div>
+      <div className="bg-blue-900 text-white p-3 font-semibold">ITEMS</div>
 
       <div className="border border-blue-200 bg-white">
         <div className="grid  items-center grid-cols-12 gap-2 p-3 bg-blue-100 border-b border-blue-200 font-semibold text-sm">
@@ -188,6 +231,7 @@ export const ItemsInformation = () => {
 
           <div className="col-span-2">
             <Select
+              name="priceCurrency"
               value={priceCurrency}
               onValueChange={(val) => handleSelectCurrency(val)}
             >
@@ -195,14 +239,14 @@ export const ItemsInformation = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="idr">Price (IDR)</SelectItem>
-                <SelectItem value="yuan">Price (¥)</SelectItem>
+                <SelectItem value="IDR">Price (IDR)</SelectItem>
+                <SelectItem value="YUAN">Price (¥)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="col-span-2 text-right mr-3 self-center">
-            {priceCurrency === "idr" ? "Total (IDR)" : "Total (¥)"}
+            {priceCurrency === "IDR" ? "Total (IDR)" : "Total (¥)"}
           </div>
 
           <div className="col-span-1 self-center">Action</div>
@@ -212,23 +256,24 @@ export const ItemsInformation = () => {
       <div className="border">
         {items.map((item, index) => (
           <div
-            key={item.name + index}
+            key={index}
             className="grid grid-cols-12 gap-2 p-3 text-sm border-b border-blue-800"
           >
             <div className="col-span-1 self-center">{`${index + 1})`}</div>
 
             <div className="col-span-2">
               <Select
+                name="itemId"
                 required
-                value={item.name || undefined}
+                value={item.id}
                 onValueChange={(val) => handleSelectItem(index, val)}
               >
-                <SelectTrigger className="border-none rounded-none pl-0 shadow-none py-2">
+                <SelectTrigger className="border-none rounded-none pl-1 shadow-none py-2">
                   <SelectValue placeholder="Select Product" />
                 </SelectTrigger>
                 <SelectContent>
-                  {supplierProduct.map((product) => (
-                    <SelectItem key={product.sku} value={product.name}>
+                  {supplierProduct.map((product, index) => (
+                    <SelectItem key={product.name + index} value={product.id}>
                       {product.name}
                     </SelectItem>
                   ))}
@@ -238,6 +283,7 @@ export const ItemsInformation = () => {
 
             <div className="col-span-2">
               <Input
+                name="itemQuantity"
                 required
                 className="border-none rounded-none pl-1 shadow-none py-2"
                 value={item.quantity}
@@ -256,22 +302,24 @@ export const ItemsInformation = () => {
 
             <div className="col-span-2">
               <Input
+                name="itemUnit"
                 required
                 className="border-none rounded-none pl-1 shadow-none py-2"
-                value={item.unit || undefined}
+                value={item.unit}
                 onChange={(e) => handleInputUnit(index, e.currentTarget.value)}
                 placeholder="Unit"
               />
             </div>
             <div className="col-span-2">
               <Input
+                name="itemPrice"
                 required
                 className="border-none rounded-none pl-1 shadow-none py-2"
-                value={item.price || undefined}
+                value={item.price}
                 placeholder="Enter Price"
                 onChange={(e) => handleInputPrice(index, e.currentTarget.value)}
                 onInput={(e) => {
-                  priceCurrency === "idr"
+                  priceCurrency === "IDR"
                     ? (e.currentTarget.value = e.currentTarget.value.replace(
                         /\D/g,
                         ""
@@ -315,7 +363,7 @@ export const ItemsInformation = () => {
           <div className="ml-auto mr-3 flex flex-col text-right divide-y-2 items-center">
             <p className="font-semibold items-center w-full grid-cols-4 grid text-lg">
               <span className="col-span-1 text-left">
-                Subtotal {priceCurrency === "idr" ? "(IDR)" : "(¥)"}
+                Subtotal {priceCurrency === "IDR" ? "(IDR)" : "(¥)"}
               </span>
               <span className="col-span-3 pr-1 ml-auto my-2">
                 {subTotalParser()}

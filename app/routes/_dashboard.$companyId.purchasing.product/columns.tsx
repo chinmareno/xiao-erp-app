@@ -1,10 +1,9 @@
 import { ColumnDef } from "@tanstack/react-table";
 
-export type Product = {
+type Product = {
   name: string;
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  supplierCount: number;
+  priceRange: string;
 };
 
 export const columns: ColumnDef<Product>[] = [
@@ -15,6 +14,14 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: "name",
-    header: "Item Name",
+    header: "Name",
+  },
+  {
+    accessorKey: "supplierCount",
+    header: "Supplier Count",
+  },
+  {
+    accessorKey: "priceRange",
+    header: "Price Range",
   },
 ];

@@ -7,47 +7,21 @@ import {
   ClientActionFunctionArgs,
   Form,
   Link,
-  useActionData,
   useFetcher,
   useLoaderData,
   useParams,
-  useRevalidator,
-  useRouteLoaderData,
 } from "@remix-run/react";
 import { createCallerWithContext } from "~/api/root.server";
 import { useState } from "react";
-import { formDataParser } from "~/lib/formDataParser";
-import { set, z } from "zod";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { Input } from "~/components/ui/input";
+import { z } from "zod";
+
 import { Button } from "~/components/ui/button";
-import { CompanyIdLoader } from "../_dashboard.$companyId";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import InputWithLabel from "~/components/InputWithLabel";
-import { Label } from "~/components/ui/label";
-import { useKeyboard } from "~/lib/useKeyboard";
-import { data } from "@remix-run/node";
+
 import { SupplierInformation } from "./SupplierInformation";
 import { CustomerInformation } from "./CustomerInformation";
 import { POHeader } from "./POHeader";
 import { ChangePONumberPrefix } from "./ChangePONumberPrefix";
-import { type PurchaseOrderItem } from "./ItemsInformationTest";
-import { ItemsInformation } from "./ItemsInformation";
+import { Item, ItemsInformation } from "./ItemsInformation";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -56,23 +30,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const suppliers = await caller.purchasing.supplier.getSuppliersByCompanyId();
   const products = await caller.purchasing.product.getProductsByCompanyId();
   const POFormat = await caller.purchasing.PO.getPONumberFormatByCompanyId();
+  const latestPOCustomerContact =
+    await caller.purchasing.PO.getLatestPOCustomerContactByCompanyId();
 
-  return { suppliers, products, POFormat };
+  return { suppliers, products, POFormat, latestPOCustomerContact };
 }
 
 const createPOSchema = z.object({
-  supplierName: z.string().min(1, "Supplier name is required"),
-  supplierAdress: z.string(),
-  PONumber: z.string().min(1, "PO Number is required"),
+  supplierContactId: z.string().min(1, "Contact is required"),
   supplierId: z.string().min(1, "Supplier is required"),
-  expectedFullReceivedDate: z.date().optional(),
-  costIn: z.enum(["YUAN", "IDR"]),
+  customerContactName: z.string().min(1, "Customer contact name is required"),
+  customerContactEmail: z.union([
+    z.string().email("Invalid email"),
+    z.literal(""),
+  ]),
+  customerContactPhone: z.union([z.string(), z.literal("")]),
+  priceCurrency: z.enum(["YUAN", "IDR"]),
   items: z
     .array(
       z.object({
-        supplierProductId: z.string().min(1, "Product is required"),
+        itemId: z.string().min(1, "Product is required"),
         quantity: z.number().min(1, "Quantity must be at least 1"),
-        itemCost: z.number().min(1, "Cost in IDR must be positive"),
+        itemCost: z.number().min(1, "Item cost is required"),
+        unit: z.string().min(1, "Unit is required"),
       })
     )
     .min(1, "At least one item is required"),
@@ -80,103 +60,120 @@ const createPOSchema = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const companyId = params.companyId as string;
-  const formData = await formDataParser(request);
-
-  const caller = await createCallerWithContext(request, companyId);
+  const formData = await JSON.parse(
+    (await request.formData()).get("data") as string
+  );
 
   const result = await createPOSchema.safeParseAsync(formData);
+
+  const caller = await createCallerWithContext(request, companyId);
 
   if (!result.success) {
     return { errors: result.error.format() };
   }
-  const { PONumber, supplierId, expectedFullReceivedDate, items, costIn } =
-    result.data;
+  const {
+    supplierId,
+    items,
+    customerContactEmail,
+    customerContactName,
+    customerContactPhone,
+    priceCurrency,
+    supplierContactId,
+  } = result.data;
 
   await caller.purchasing.PO.createPO({
-    PONumber,
     supplierId,
-    expectedFullReceivedDate,
     items,
-    costIn,
+    customerContactEmail,
+    customerContactName,
+    customerContactPhone,
+    priceCurrency,
+    supplierContactId,
   });
 
   return redirect(`/${companyId}/purchasing/PO`);
 }
 
-// export async function clientAction({
-//   request,
-//   serverAction,
-// }: ClientActionFunctionArgs) {
-//   const requestClone = request.clone();
-//   const formData = await formDataParser(requestClone);
-//   console.log(formData);
-//   return null;
+export async function clientAction({
+  request,
+  serverAction,
+}: ClientActionFunctionArgs) {
+  const requestClone = request.clone();
+  const fg = await JSON.parse(
+    (await requestClone.formData()).get("data") as string
+  );
+  const result = await createPOSchema.safeParseAsync(fg);
 
-//   const result = await createPOSchema.safeParseAsync(formData);
-//   if (result.error) return { errors: result.error.format() };
-//   return serverAction<typeof action>();
-// }
+  if (result.error) return { errors: result.error.format() };
+  return serverAction<typeof action>();
+}
 
 export default function POCreate() {
   const params = useParams();
   const loaderData = useLoaderData<typeof loader>();
   const fetcherPOFormat = useFetcher();
+  const submitFetcher = useFetcher();
 
-  const [items, setItems] = useState<PurchaseOrderItem[]>([
-    {
-      id: crypto.randomUUID(),
-      supplierProductId: "",
-      quantity: 1,
-      itemCost: 0,
-    },
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(
+    null
+  );
+  const [items, setItems] = useState<Item[]>([
+    { id: undefined, quantity: "", unit: "pcs", price: "" },
   ]);
 
-  const handleAddItem = () => {
-    setItems([
-      ...items,
-      {
-        id: crypto.randomUUID(),
-        supplierProductId: "",
-        quantity: 1,
-        itemCost: 0,
-      },
-    ]);
-  };
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  const handleRemoveItem = (id: string) => {
-    if (items.length > 1) {
-      setItems(items.filter((item) => item.id !== id));
-    }
-  };
+    const formData = new FormData(e.currentTarget);
 
-  const handleUpdateItem = (
-    id: string,
-    field: keyof PurchaseOrderItem,
-    value: any
-  ) => {
-    setItems(
-      items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
-    );
-  };
+    const formObject = Object.fromEntries(formData.entries());
 
-  const calculateTotal = () => {
-    return items.reduce(
-      (total, item) => total + item.quantity * item.itemCost,
-      0
+    const itemsArray = items
+      .filter((item) => item.id && item.quantity && item.price)
+      .map((item) => ({
+        itemId: item.id,
+        quantity: Number(item.quantity.replace(/,/g, "")),
+        itemCost: Number(item.price.replace(/,/g, "")),
+        unit: item.unit,
+      }));
+
+    const completeData = {
+      ...formObject,
+      items: itemsArray as {
+        itemId: string;
+        quantity: number;
+        itemCost: number;
+        unit: string;
+      }[],
+    };
+
+    submitFetcher.submit(
+      { data: JSON.stringify(completeData) },
+      { method: "POST" }
     );
   };
 
   return (
     <>
       <ChangePONumberPrefix fetcherPOFormat={fetcherPOFormat} params={params} />
-      <Form method="POST">
+
+      <Form onSubmit={handleSubmit}>
         <div className="max-w-6xl mx-auto p-6 border border-blue-200 bg-blue-50">
           <POHeader loaderData={loaderData} fetcherPOFormat={fetcherPOFormat} />
 
-          <SupplierInformation loaderData={loaderData} params={params} />
+          <SupplierInformation
+            setSelectedSupplierId={setSelectedSupplierId}
+            loaderData={loaderData}
+          />
 
-          <CustomerInformation />
-          <ItemsInformation />
+          <CustomerInformation loaderData={loaderData} />
+
+          <ItemsInformation
+            params={params}
+            selectedSupplierId={selectedSupplierId}
+            items={items}
+            setItems={setItems}
+          />
         </div>
         <div className="mt-8 ml-16 gap-7 flex">
           <Button type="button" variant="secondary" asChild>

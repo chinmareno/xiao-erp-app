@@ -1,6 +1,5 @@
 import { type FetcherWithComponents } from "@remix-run/react";
 import type { loader as createPoLoaderType } from "./route";
-import { Input } from "~/components/ui/input";
 
 type Props = {
   loaderData: Awaited<ReturnType<typeof createPoLoaderType>>;
@@ -37,12 +36,6 @@ export const POHeader = ({ loaderData, fetcherPOFormat }: Props) => {
               <div className="text-sm font-bold">{PONumberFormat}</div>
             </div>
             <div className="px-4 py-2 text-center bg-white">
-              <Input
-                name="issuedAt"
-                readOnly
-                className="hidden"
-                value={todayDate.toISOString()}
-              />
               <div className="text-sm text-gray-700">
                 {todayDate.toLocaleDateString("id-ID", {
                   timeZone: "Asia/Jakarta",

@@ -44,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <Toaster visibleToasts={2} richColors />
+        <Toaster visibleToasts={2} expand richColors />
         {children}
         <ScrollRestoration />
         <Scripts />

@@ -75,6 +75,7 @@ module.exports = {
         "import/no-named-as-default-member": "off",
         "react/prop-types": "off",
         "react/no-unescaped-entities": "off",
+        "react-hooks/exhaustive-deps": "off",
       },
     },
 

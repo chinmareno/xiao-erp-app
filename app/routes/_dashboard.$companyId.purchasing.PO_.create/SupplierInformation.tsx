@@ -1,4 +1,4 @@
-import { type Params, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 import InputWithLabel from "~/components/InputWithLabel";
 import { Button } from "~/components/ui/button";
@@ -48,10 +48,13 @@ type contactErrorsType = {
 
 type Props = {
   loaderData: Awaited<ReturnType<typeof createPoLoaderType>>;
-  params: Readonly<Params<string>>;
+  setSelectedSupplierId: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-export const SupplierInformation = ({ loaderData, params }: Props) => {
+export const SupplierInformation = ({
+  loaderData,
+  setSelectedSupplierId,
+}: Props) => {
   const [openContactDialog, setOpenContactDialog] = useState(false);
   const [contactErrors, setContactErrors] = useState<contactErrorsType | null>(
     null
@@ -132,6 +135,7 @@ export const SupplierInformation = ({ loaderData, params }: Props) => {
           <div className="text-xs text-gray-600 mb-1">SUPPLIER NAME</div>
           <Select
             onValueChange={(value) => {
+              setSelectedSupplierId(value);
               handleSupplierChange(value);
             }}
             name="supplierId"
@@ -155,7 +159,7 @@ export const SupplierInformation = ({ loaderData, params }: Props) => {
             onValueChange={(value) => {
               handleContactChange(value);
             }}
-            name="contactId"
+            name="supplierContactId"
             required
           >
             <SelectTrigger className="w-full border-0 bg-white rounded-none shadow-none py-2 pl-2 h-auto">
@@ -192,19 +196,6 @@ export const SupplierInformation = ({ loaderData, params }: Props) => {
                         method="POST"
                         action="/api/addSupplierContact"
                       >
-                        <Input
-                          readOnly
-                          className="hidden"
-                          name="companyId"
-                          value={params.companyId as string}
-                        />
-                        <Input
-                          readOnly
-                          className="hidden"
-                          name="supplierId"
-                          value={selectedSupplier.id}
-                        />
-
                         <InputWithLabel
                           id="contactName"
                           label="Contact name"
@@ -279,24 +270,12 @@ export const SupplierInformation = ({ loaderData, params }: Props) => {
           <div className="text-sm py-2 pl-2 bg-white">
             {selectedContact?.phone || "-"}
           </div>
-          <Input
-            readOnly
-            className="hidden"
-            name="supplierContactPhone"
-            value={selectedContact?.phone || ""}
-          />
         </div>
         <div className="p-3">
           <div className="text-xs text-gray-600 mb-1">EMAIL ADDRESS</div>
           <div className="text-sm py-2 pl-2 bg-white">
             {selectedContact?.email || "-"}
           </div>
-          <Input
-            readOnly
-            className="hidden"
-            name="supplierContactEmail"
-            value={selectedContact?.email || ""}
-          />
         </div>
       </div>
     </div>

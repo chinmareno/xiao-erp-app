@@ -9,13 +9,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
 
   const caller = await createCallerWithContext(request, companyId);
-  const products = await caller.purchasing.product.getProductsByCompanyId();
+  const POs = await caller.purchasing.PO.getPOsByCompanyId();
 
-  return products;
+  return POs;
 }
 
 export default function PurchasingProduct() {
-  const productsData = useLoaderData<typeof loader>();
+  const POs = useLoaderData<typeof loader>();
 
   return (
     <div className="container mx-auto flex flex-col py-10">
@@ -29,7 +29,7 @@ export default function PurchasingProduct() {
         <Plus className="mr-2 h-4 w-4" />
         <span>Add PO</span>
       </Link>
-      <DataTable columns={columns} data={productsData} />
+      <DataTable columns={columns} data={POs} />
     </div>
   );
 }
