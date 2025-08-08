@@ -25,7 +25,6 @@ export const productRouter = createTRPCRouter({
         const alreadyAdded = await ctx.db.item.findFirst({
           where: { id: itemId, supplierProducts: { some: { supplierId } } },
         });
-        console.log(alreadyAdded);
         if (alreadyAdded) {
           throw new TRPCError({
             code: "CONFLICT",
@@ -52,6 +51,72 @@ export const productRouter = createTRPCRouter({
             name: itemName,
             supplierProducts: { create: { supplierId, price, priceCurrency } },
           },
+        });
+      }
+    }),
+
+  editProduct: purchasingProcedure
+    .input(
+      z.object({
+        supplierId: z.string().min(1, "Supplier is required"),
+        supplierProductId: z.string().min(1, "Item id is required"),
+        itemId: z.string().min(1, "Item id is required").optional(),
+        itemName: z.string().min(1, "Item name is required").optional(),
+        price: z.string().min(0, "Price must be a positive number"),
+        priceCurrency: z.string().min(1, "Price currency is required"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const {
+        supplierId,
+        supplierProductId,
+        itemName,
+        price,
+        priceCurrency,
+        itemId,
+      } = input;
+      const oldSupplierProduct = await ctx.db.supplierProduct.findUnique({
+        where: { id: supplierProductId },
+        include: { item: true },
+      });
+      if (!oldSupplierProduct) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Supplier product not found",
+        });
+      }
+
+      if (itemId) {
+        await ctx.db.supplierProduct.update({
+          where: { id: supplierProductId },
+          data: { itemId },
+        });
+      } else if (itemName?.trim() === oldSupplierProduct.item.name) {
+        await ctx.db.supplierProduct.update({
+          where: { id: supplierProductId },
+          data: { price, priceCurrency },
+        });
+      } else if (itemName) {
+        await ctx.db.$transaction([
+          ctx.db.item.create({
+            data: {
+              name: itemName,
+              supplierProducts: {
+                create: { supplierId, price, priceCurrency },
+              },
+            },
+          }),
+          ctx.db.supplierProduct.delete({ where: { id: supplierProductId } }),
+        ]);
+      }
+
+      const remainingConnections = await ctx.db.supplierProduct.count({
+        where: { itemId: oldSupplierProduct.itemId },
+      });
+
+      if (remainingConnections === 0) {
+        await ctx.db.item.delete({
+          where: { id: oldSupplierProduct.itemId },
         });
       }
     }),
@@ -101,6 +166,7 @@ export const productRouter = createTRPCRouter({
       },
       select: {
         price: true,
+        priceCurrency: true,
         itemId: true,
         item: {
           select: { name: true },
@@ -109,26 +175,58 @@ export const productRouter = createTRPCRouter({
       },
     });
 
-    const groupedByItem = supplierProducts.reduce((acc, sp) => {
-      if (!acc[sp.itemId]) {
-        acc[sp.itemId] = {
-          name: sp.item.name,
-          prices: [],
-          supplierIds: new Set(),
-        };
-      }
-      acc[sp.itemId].prices.push(Number(sp.price));
-      acc[sp.itemId].supplierIds.add(sp.supplierId);
-      return acc;
-    }, {} as Record<string, { name: string; prices: number[]; supplierIds: Set<string> }>);
+    const grouped = supplierProducts.reduce(
+      (acc, sp) => {
+        const key = sp.itemId;
 
-    const result = Object.values(groupedByItem).map((group) => {
-      const min = Math.min(...group.prices);
-      const max = Math.max(...group.prices);
+        if (!acc[key]) {
+          acc[key] = {
+            id: sp.itemId,
+            name: sp.item.name,
+            supplierIds: new Set<string>(),
+            IDR: [] as number[],
+            YUAN: [] as number[],
+          };
+        }
+
+        acc[key].supplierIds.add(sp.supplierId);
+
+        if (sp.priceCurrency === "IDR") {
+          acc[key].IDR.push(Number(sp.price));
+        } else if (sp.priceCurrency === "YUAN") {
+          acc[key].YUAN.push(Number(sp.price));
+        }
+
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          id: string;
+          name: string;
+          supplierIds: Set<string>;
+          IDR: number[];
+          YUAN: number[];
+        }
+      >
+    );
+
+    const result = Object.values(grouped).map((group) => {
+      const formatRange = (prices: number[], symbol: string) => {
+        if (prices.length === 0) return null;
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        return min === max
+          ? `${symbol}${min}`
+          : `${symbol}${min} – ${symbol}${max}`;
+      };
+
       return {
+        id: group.id, // include id in the final result
         name: group.name,
         supplierCount: group.supplierIds.size,
-        priceRange: min === max ? `¥${min}` : `¥${min} – ¥${max}`,
+        priceRangeIDR: formatRange(group.IDR, "Rp"),
+        priceRangeYUAN: formatRange(group.YUAN, "¥"),
       };
     });
 
@@ -146,6 +244,7 @@ export const productRouter = createTRPCRouter({
       select: {
         item: true,
       },
+      distinct: ["itemId"],
     });
 
     const flatUniqueItemsBySupplier = uniqueItemsBySupplier.map(({ item }) => ({
