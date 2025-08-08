@@ -27,8 +27,12 @@ export const columns: ColumnDef<Supplier>[] = [
     header: "Name",
   },
   {
-    accessorKey: "taxId",
     header: "Tax ID (NPWP)",
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap overflow-hidden text-ellipsis block max-w-[300px]">
+        {row.original.taxId}
+      </span>
+    ),
   },
   {
     accessorKey: "address",
@@ -37,12 +41,17 @@ export const columns: ColumnDef<Supplier>[] = [
   {
     header: "Contact",
     cell: ({ row }) => {
-      const contactName = row.original.contact[0].name;
-      const contactPhone = row.original.contact[0].phone;
-      const contactEmail = row.original.contact[0].email;
-      const contact = `${contactName}/${contactPhone || contactEmail}`;
+      const contact = row.original.contact?.[0];
+      const name = contact?.name;
+      const phone = contact?.phone || "";
+      const email = contact?.email || "";
+      const contactInfo = name ? `${name} / ${phone || email || "-"}` : "N/A";
 
-      return contact;
+      return (
+        <span className="whitespace-nowrap overflow-hidden text-ellipsis block max-w-[300px]">
+          {contactInfo}
+        </span>
+      );
     },
   },
 ];

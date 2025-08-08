@@ -11,7 +11,6 @@ export async function action({ request }: ActionFunctionArgs) {
     supplierId: string;
     companyId: string;
   };
-  console.log(formData.companyId);
   const caller = await createCallerWithContext(request, formData.companyId);
   const result =
     await caller.purchasing.supplier.getSupplierProductsBySupplierId({

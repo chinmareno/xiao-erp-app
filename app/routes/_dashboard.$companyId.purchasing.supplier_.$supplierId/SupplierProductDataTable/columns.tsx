@@ -1,3 +1,4 @@
+import { Link } from "@remix-run/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -11,9 +12,10 @@ import {
 } from "~/components/ui/dropdown-menu";
 
 export type SupplierProduct = {
+  id: string;
   name: string;
-  costIdr: number;
-  costYuan: number;
+  price: string;
+  priceCurrency: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -29,28 +31,35 @@ export const columns: ColumnDef<SupplierProduct>[] = [
     header: "Item Name",
   },
   {
-    id: "costIdr",
-    header: "Cost IDR",
+    id: "price",
+    header: "Price",
     cell: ({ row }) => {
-      const { costIdr } = row.original;
-      return <span>Rp {costIdr.toLocaleString()}</span>;
+      const { price, priceCurrency } = row.original;
+
+      const symbol = priceCurrency === "YUAN" ? "¥" : "Rp";
+      const formattedPrice = parseFloat(price).toLocaleString(
+        priceCurrency === "YUAN" ? "zh-CN" : "id-ID",
+        {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }
+      );
+
+      return (
+        <span>
+          {symbol} {formattedPrice}
+        </span>
+      );
     },
   },
+
   {
-    id: "costYuan",
-    header: "Cost Yuan)",
-    cell: ({ row }) => {
-      const { costYuan } = row.original;
-      return <span>¥{costYuan.toLocaleString()}</span>;
-    },
-  },
-  {
-    accessorKey: "createdAt",
     header: "First Added",
+    cell: ({ row }) => row.original.createdAt.toLocaleDateString(),
   },
   {
-    accessorKey: "updatedAt",
     header: "Last Updated",
+    cell: ({ row }) => row.original.updatedAt.toLocaleDateString(),
   },
   {
     id: "actions",
@@ -68,7 +77,9 @@ export const columns: ColumnDef<SupplierProduct>[] = [
             <DropdownMenuLabel>{row.getValue("name")}</DropdownMenuLabel>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Edit Supplier Product</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={row.original.id}>Edit Supplier Product</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem>Delete Supplier Product</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

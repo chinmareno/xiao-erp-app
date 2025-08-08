@@ -51,7 +51,6 @@ export const ItemsInformation = ({
 
   useEffect(() => {
     if (!selectedSupplierId) return;
-    console.log("subm,t");
     fetcherSupplierProducts.submit(
       {
         supplierId: selectedSupplierId,
@@ -62,12 +61,10 @@ export const ItemsInformation = ({
   }, [selectedSupplierId]);
 
   useEffect(() => {
-    console.log(fetcherSupplierProducts.data);
     if (
       fetcherSupplierProducts.data &&
       fetcherSupplierProducts.state === "idle"
     ) {
-      console.log("submitted,t");
       const { products } =
         fetcherSupplierProducts.data as GetSupplierProductsBySupplierIdActionData;
       setSupplierProduct(products);

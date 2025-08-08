@@ -119,10 +119,7 @@ export default function PurchasingSupplierCreate() {
   return (
     <Form method="post" className="grid grid-cols-2 gap-10">
       <div className={SECTION_FORM_CLASSNAME}>
-        <FormHeader
-          title="Supplier Information"
-          helperText="Just enter the supplier name if you don't have full details yet."
-        />
+        <FormHeader title="Supplier Information" />
 
         <InputWithLabel
           id="name"
@@ -159,7 +156,7 @@ export default function PurchasingSupplierCreate() {
       <div className={SECTION_FORM_CLASSNAME}>
         <FormHeader
           title="Contact Information"
-          helperText=" Fill this if the supplier has a contact person (PIC)."
+          helperText=" Leave this field empty if u don't know the contact yet"
         />
 
         <InputWithLabel

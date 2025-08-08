@@ -3,7 +3,8 @@ import { ColumnDef } from "@tanstack/react-table";
 type Product = {
   name: string;
   supplierCount: number;
-  priceRange: string;
+  priceRangeIDR: string | null;
+  priceRangeYUAN: string | null;
 };
 
 export const columns: ColumnDef<Product>[] = [
@@ -21,7 +22,13 @@ export const columns: ColumnDef<Product>[] = [
     header: "Supplier Count",
   },
   {
-    accessorKey: "priceRange",
-    header: "Price Range",
+    id: "idr",
+    header: "Price Range (IDR)",
+    cell: ({ row }) => row.original.priceRangeIDR ?? "N/A",
+  },
+  {
+    id: "yuan",
+    header: "Price Range (YUAN)",
+    cell: ({ row }) => row.original.priceRangeYUAN ?? "N/A",
   },
 ];

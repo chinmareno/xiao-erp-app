@@ -199,6 +199,7 @@ model SupplierProduct {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   stockItems         StockItem[]
+
 }
 
 model Warehouse {

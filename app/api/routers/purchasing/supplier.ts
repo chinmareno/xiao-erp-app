@@ -117,7 +117,8 @@ export const supplierRouter = createTRPCRouter({
 
       const flatProductsDetails = supplierWithProducts.products.map(
         (product) => ({
-          id: product.item.id,
+          id: product.id,
+          itemId: product.item.id,
           name: product.item.name,
           price: product.price,
           priceCurrency: product.priceCurrency,
@@ -125,7 +126,7 @@ export const supplierRouter = createTRPCRouter({
           updatedAt: product.updatedAt,
         })
       );
-      console.log(flatProductsDetails);
+
       const supplierDetails = {
         name: supplierWithProducts.name,
         createdAt: supplierWithProducts.createdAt,
