@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Form,
-  useLoaderData,
-  useNavigate,
-  useParams,
-  useRouteLoaderData,
-} from "@remix-run/react";
+import { Form, useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -309,7 +303,11 @@ export default function ProductEdit() {
               />
             </div>
 
-            <Button type="submit" className="w-full">
+            <Button
+              disabled={!selectedProduct}
+              type="submit"
+              className="w-full"
+            >
               Save Product
             </Button>
           </Form>

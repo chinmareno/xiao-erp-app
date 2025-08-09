@@ -1,11 +1,12 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import { columns as productColumns } from "./SupplierProductDataTable/columns";
 import { DataTable as ProductDataTable } from "./SupplierProductDataTable/data-table";
 import { columns as poColumns } from "./SupplierPODataTable/columns";
 import { DataTable as PODataTable } from "./SupplierPODataTable/data-table";
 import { createCallerWithContext } from "~/api/root.server";
+import { Button } from "~/components/ui/button";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const supplierId = params.supplierId as string;
@@ -64,7 +65,12 @@ export default function SupplierDetail() {
 
       {activeTab === "products" ? (
         <div>
-          <h3 className="mb-4 text-lg font-semibold">Supplier Products</h3>
+          <div className="flex">
+            <h3 className="mb-4 text-lg font-semibold">Supplier Products</h3>
+            <Button asChild className="ml-auto mr-4">
+              <Link to={"add-product"}>Add Product</Link>
+            </Button>
+          </div>
           <ProductDataTable
             columns={productColumns}
             data={supplierData.products}

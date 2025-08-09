@@ -176,6 +176,8 @@ model Supplier {
 
   products       SupplierProduct[]
   purchaseOrders PurchaseOrder[]
+
+  @@index([companyId])
 }
 
 model Item {
@@ -200,6 +202,7 @@ model SupplierProduct {
   updatedAt          DateTime            @updatedAt
   stockItems         StockItem[]
 
+   @@index([ supplierId, itemId])
 }
 
 model Warehouse {
@@ -251,6 +254,7 @@ model PurchaseOrder {
   companyId        String
   company          Company            @relation(fields: [companyId ], references: [id], onDelete: Cascade)
   @@unique([companyId, PONumber])
+  @@index([supplierId])
   
   supplierName             String
   supplierContactName      String

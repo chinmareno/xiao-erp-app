@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -42,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.log({ errors: result.error.format() });
     return null;
   }
-  const { itemId, supplierId, itemName, price, itemImage, priceCurrency } =
+  const { itemId, itemName, price, itemImage, priceCurrency, supplierId } =
     result.data;
 
   if (itemId) {
@@ -75,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       priceCurrency,
     });
   }
-  return redirect("../product");
+  return redirect(`/${companyId}/purchasing/supplier/${supplierId}`);
 }
 
 export default function ProductCreate() {
@@ -85,6 +90,12 @@ export default function ProductCreate() {
   const [priceCurrency, setPriceCurrency] = useState("IDR");
   const [addNewItem, setAddNewItem] = useState(false);
   const [price, setPrice] = useState("");
+
+  const params = useParams();
+
+  const selectedSupplier = loaderData.suppliers.find(
+    (s) => s.id === params.supplierId
+  );
 
   useEffect(() => {
     if (actionData?.errors) {
@@ -100,18 +111,10 @@ export default function ProductCreate() {
       <Form className="space-y-4" method="POST">
         <div>
           <Label>Supplier</Label>
-          <Select name="supplierId" required>
-            <SelectTrigger>
-              <SelectValue placeholder="Select supplier" />
-            </SelectTrigger>
-            <SelectContent>
-              {loaderData.suppliers.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <input name="supplierId" type="hidden" value={selectedSupplier?.id} />
+          <p className="p-1.5 pl-2 border border-input rounded-md shadow-sm">
+            {selectedSupplier?.name}
+          </p>
         </div>
         <div>
           <Label>Item</Label>

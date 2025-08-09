@@ -222,7 +222,7 @@ export const productRouter = createTRPCRouter({
       };
 
       return {
-        id: group.id, // include id in the final result
+        id: group.id,
         name: group.name,
         supplierCount: group.supplierIds.size,
         priceRangeIDR: formatRange(group.IDR, "Rp"),
@@ -252,4 +252,30 @@ export const productRouter = createTRPCRouter({
     }));
     return flatUniqueItemsBySupplier;
   }),
+
+  deleteSupplierProductById: purchasingProcedure
+    .input(
+      z.object({
+        supplierId: z.string().min(1),
+        supplierProductId: z.string().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { supplierId, supplierProductId } = input;
+
+      const deletedSupplierProduct = await ctx.db.supplierProduct.delete({
+        where: { id: supplierProductId, supplierId: supplierId },
+        select: { itemId: true },
+      });
+
+      const remainingConnections = await ctx.db.supplierProduct.count({
+        where: { itemId: deletedSupplierProduct.itemId },
+      });
+
+      if (remainingConnections === 0) {
+        await ctx.db.item.delete({
+          where: { id: deletedSupplierProduct.itemId },
+        });
+      }
+    }),
 });
