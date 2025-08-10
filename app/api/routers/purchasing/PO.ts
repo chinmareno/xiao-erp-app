@@ -5,6 +5,12 @@ const createPOSchema = z.object({
   supplierContactId: z.string().min(1, "Contact is required"),
   supplierId: z.string().min(1, "Supplier is required"),
   customerContactName: z.string().min(1, "Customer contact name is required"),
+  discount: z.string().min(1),
+  tax: z.string().min(1),
+  subTotal: z.string().min(1),
+  discountTotal: z.string().min(1),
+  taxTotal: z.string().min(1),
+  grandTotal: z.string().min(1),
   customerContactEmail: z.union([
     z.string().email("Invalid email"),
     z.literal(""),
@@ -35,6 +41,12 @@ export const PORouter = createTRPCRouter({
         priceCurrency,
         supplierContactId,
         supplierId,
+        discount,
+        tax,
+        discountTotal,
+        taxTotal,
+        subTotal,
+        grandTotal,
       } = input;
 
       const idrYuanRate = await ctx.db.yuanIdrRate.findFirst();
@@ -48,7 +60,7 @@ export const PORouter = createTRPCRouter({
       if (!PONumberFormatData) throw new Error("PO Number format not found");
       const PONumber = `${
         PONumberFormatData.prefix
-      }${PONumberFormatData.currentNumber.toString().padStart(6, "0")}`;
+      }-${PONumberFormatData.currentNumber.toString().padStart(6, "0")}`;
 
       const supplierDetail = await ctx.db.supplier.findUnique({
         where: {
@@ -71,6 +83,7 @@ export const PORouter = createTRPCRouter({
           quantity: item.quantity,
           costYuan: item.itemCost,
           costIdr: item.itemCost * yuanToIdrRate,
+          unit: item.unit,
         }));
 
         await ctx.db.$transaction([
@@ -81,6 +94,11 @@ export const PORouter = createTRPCRouter({
           ctx.db.purchaseOrder.create({
             data: {
               PONumber,
+              discountTotal,
+              grandTotal,
+              subTotal,
+              taxTotal,
+              priceCurrency,
               customerName: customerDetail.name,
               supplierName: supplierDetail.name,
               customerAddress: customerDetail.address,
@@ -93,6 +111,8 @@ export const PORouter = createTRPCRouter({
               customerContactEmail,
               customerContactPhone,
               supplierId,
+              tax: Number(tax),
+              discount: Number(discount),
               companyId: ctx.companyId,
               items: {
                 createMany: { data: updatedItems },
@@ -106,6 +126,7 @@ export const PORouter = createTRPCRouter({
           quantity: item.quantity,
           costIdr: item.itemCost,
           costYuan: item.itemCost * idrToYuanRate,
+          unit: item.unit,
         }));
         await ctx.db.$transaction([
           ctx.db.pONumberFormat.update({
@@ -116,6 +137,11 @@ export const PORouter = createTRPCRouter({
           ctx.db.purchaseOrder.create({
             data: {
               PONumber,
+              discountTotal,
+              grandTotal,
+              subTotal,
+              taxTotal,
+              priceCurrency,
               customerName: customerDetail.name,
               supplierName: supplierDetail.name,
               customerAddress: customerDetail.address,
@@ -128,6 +154,8 @@ export const PORouter = createTRPCRouter({
               customerContactEmail,
               customerContactPhone,
               supplierId,
+              tax: Number(tax),
+              discount: Number(discount),
               companyId: ctx.companyId,
               items: {
                 createMany: { data: updatedItems },
@@ -205,4 +233,27 @@ export const PORouter = createTRPCRouter({
 
     return flatPOs;
   }),
+
+  getPOByPOId: purchasingProcedure
+    .input(
+      z.object({
+        id: z.string().min(1, "PO ID is required"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { id } = input;
+
+      const PO = await ctx.db.purchaseOrder.findUnique({
+        where: { id, companyId: ctx.companyId },
+        include: {
+          items: { include: { item: true } },
+        },
+      });
+
+      if (!PO) {
+        throw new Error("Purchase Order not found");
+      }
+
+      return PO;
+    }),
 });

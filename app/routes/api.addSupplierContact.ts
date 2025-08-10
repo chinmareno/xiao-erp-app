@@ -4,17 +4,9 @@ import { z } from "zod";
 import { createCallerWithContext } from "~/api/root.server";
 import { formDataParser } from "~/lib/formDataParser";
 
-export type AddSupplierContact = {
-  contactName: string;
-  contactPhone: string;
-  contactEmail: string;
-  contactNotes: string;
-  supplierId: string;
-  companyId: string;
-};
-
 const contactFormSchema = z
   .object({
+    companyId: z.string().min(1, "Company ID is required"),
     supplierId: z.string().min(1, "Supplier ID is required"),
     contactName: z.string().min(1, "Contact name is required"),
     contactPhone: z
@@ -64,16 +56,26 @@ const contactFormSchema = z
   );
 
 export async function action({ request }: ActionFunctionArgs) {
-  const formData = (await formDataParser(request)) as AddSupplierContact;
+  const formData = await formDataParser(request);
   const result = await contactFormSchema.safeParseAsync(formData);
   if (result.error) return { errors: result.error.format() };
-  const caller = await createCallerWithContext(request, formData.companyId);
+
+  const {
+    supplierId,
+    contactEmail,
+    contactName,
+    contactNotes,
+    contactPhone,
+    companyId,
+  } = result.data;
+
+  const caller = await createCallerWithContext(request, companyId);
   await caller.purchasing.supplier.addSupplierContact({
-    supplierId: formData.supplierId,
-    contactName: formData.contactName,
-    contactPhone: formData.contactPhone,
-    contactEmail: formData.contactEmail,
-    contactNotes: formData.contactNotes,
+    supplierId,
+    contactName,
+    contactEmail,
+    contactNotes,
+    contactPhone,
   });
 
   return null;
@@ -84,9 +86,12 @@ export async function clientAction({
   serverAction,
 }: ClientActionFunctionArgs) {
   const cloneRequest = request.clone();
-  const formData = (await formDataParser(cloneRequest)) as AddSupplierContact;
+  const formData = await formDataParser(cloneRequest);
   const result = await contactFormSchema.safeParseAsync(formData);
-  if (result.error) return { errors: result.error.format() };
+  if (result.error) {
+    console.error({ errors: result.error.format() });
+    return { errors: result.error.format() };
+  }
 
   return await serverAction();
 }

@@ -49,11 +49,13 @@ type contactErrorsType = {
 type Props = {
   loaderData: Awaited<ReturnType<typeof createPoLoaderType>>;
   setSelectedSupplierId: React.Dispatch<React.SetStateAction<string | null>>;
+  companyId?: string;
 };
 
 export const SupplierInformation = ({
   loaderData,
   setSelectedSupplierId,
+  companyId,
 }: Props) => {
   const [openContactDialog, setOpenContactDialog] = useState(false);
   const [contactErrors, setContactErrors] = useState<contactErrorsType | null>(
@@ -141,7 +143,7 @@ export const SupplierInformation = ({
             name="supplierId"
             required
           >
-            <SelectTrigger className="w-full border-0 bg-white rounded-none shadow-none py-2 pl-2 h-auto">
+            <SelectTrigger className="w-full border-0 bg-white rounded-none shadow-none py-3 pl-2 h-auto">
               <SelectValue placeholder="Select a supplier" />
             </SelectTrigger>
             <SelectContent>
@@ -162,7 +164,7 @@ export const SupplierInformation = ({
             name="supplierContactId"
             required
           >
-            <SelectTrigger className="w-full border-0 bg-white rounded-none shadow-none py-2 pl-2 h-auto">
+            <SelectTrigger className="w-full border-0 bg-white rounded-none shadow-none py-3 pl-2 h-auto">
               <SelectValue placeholder="Select contact" />
             </SelectTrigger>
             <SelectContent className="max-h-48">
@@ -172,7 +174,10 @@ export const SupplierInformation = ({
                 </SelectItem>
               ))}
               {selectedSupplier && (
-                <Dialog open={openContactDialog}>
+                <Dialog
+                  open={openContactDialog}
+                  onOpenChange={setOpenContactDialog}
+                >
                   <DialogTrigger
                     onClick={() => setOpenContactDialog(true)}
                     asChild
@@ -196,6 +201,16 @@ export const SupplierInformation = ({
                         method="POST"
                         action="/api/addSupplierContact"
                       >
+                        <input
+                          type="hidden"
+                          name="supplierId"
+                          value={selectedSupplier.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="companyId"
+                          value={companyId}
+                        />
                         <InputWithLabel
                           id="contactName"
                           label="Contact name"
@@ -267,13 +282,13 @@ export const SupplierInformation = ({
       <div className="grid grid-cols-2">
         <div className="p-3 border-r border-gray-300">
           <div className="text-xs text-gray-600 mb-1">PHONE NUMBER</div>
-          <div className="text-sm py-2 pl-2 bg-white">
+          <div className="text-sm py-3 pl-2 bg-white">
             {selectedContact?.phone || "-"}
           </div>
         </div>
         <div className="p-3">
           <div className="text-xs text-gray-600 mb-1">EMAIL ADDRESS</div>
-          <div className="text-sm py-2 pl-2 bg-white">
+          <div className="text-sm py-3 pl-2 bg-white">
             {selectedContact?.email || "-"}
           </div>
         </div>

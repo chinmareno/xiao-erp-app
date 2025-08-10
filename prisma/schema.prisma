@@ -255,7 +255,7 @@ model PurchaseOrder {
   company          Company            @relation(fields: [companyId ], references: [id], onDelete: Cascade)
   @@unique([companyId, PONumber])
   @@index([supplierId])
-  
+  priceCurrency            String     @default("IDR")
   supplierName             String
   supplierContactName      String
   supplierContactEmail     String?
@@ -266,6 +266,14 @@ model PurchaseOrder {
   customerContactEmail     String?
   customerContactPhone     String?
   customerAddress          String
+
+  discount                   Float 
+  tax                        Float 
+    subTotal                 String
+  discountTotal                String
+  taxTotal                 String
+  grandTotal                 String
+
 
   PONumber          String
   status           PurchaseOrderStatus @default(UNRECEIVED)
@@ -290,8 +298,9 @@ model PurchaseOrderItem {
   id              String   @id @default(cuid())
   purchaseOrderId String
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  itemId      String
-  item         Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId          String
+  item            Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  unit            String              @default("pcs")
   quantity        Int
   costYuan        Float
   costIdr         Float

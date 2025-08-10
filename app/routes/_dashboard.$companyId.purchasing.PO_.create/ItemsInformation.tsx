@@ -22,6 +22,7 @@ export type Item = {
 
 type SupplierProducts = {
   id: string;
+  itemId: string;
   name: string;
   price: string;
   priceCurrency: string;
@@ -51,6 +52,7 @@ export const ItemsInformation = ({
 
   useEffect(() => {
     if (!selectedSupplierId) return;
+    setItems([{ id: undefined, quantity: "", unit: "pcs", price: "" }]);
     fetcherSupplierProducts.submit(
       {
         supplierId: selectedSupplierId,
@@ -90,14 +92,43 @@ export const ItemsInformation = ({
   };
 
   const handleSelectItem = (index: number, value: string) => {
-    setItems((prev) =>
-      prev.map((item, i) => {
-        if (i === index) {
-          return { ...item, id: value };
-        }
-        return item;
-      })
-    );
+    const selectedItem = supplierProduct.find((i) => i.itemId === value);
+
+    if (!selectedItem) return;
+
+    if (selectedItem.priceCurrency === priceCurrency) {
+      const isIDR = priceCurrency === "IDR";
+      const formattedValue = thousandSeparatorFormatter(selectedItem.price);
+
+      if (isIDR) {
+        setItems((prev) =>
+          prev.map((item, i) => {
+            if (i === index) {
+              return { ...item, id: value, price: formattedValue };
+            }
+            return item;
+          })
+        );
+      } else {
+        setItems((prev) =>
+          prev.map((item, i) => {
+            if (i === index) {
+              return { ...item, id: value, price: selectedItem.price };
+            }
+            return item;
+          })
+        );
+      }
+    } else {
+      setItems((prev) =>
+        prev.map((item, i) => {
+          if (i === index) {
+            return { ...item, id: value };
+          }
+          return item;
+        })
+      );
+    }
   };
 
   const handleInputQuantity = (index: number, value: string) => {
@@ -185,7 +216,7 @@ export const ItemsInformation = ({
 
   const discountParser = () => {
     const subtotal = subTotalParser().replace(/,/g, "");
-    const discountAmount = (Number(subtotal) * discount) / 100;
+    const discountAmount = Math.ceil((Number(subtotal) * discount) / 100);
 
     return priceCurrency === "IDR"
       ? thousandSeparatorFormatter(String(discountAmount))
@@ -194,24 +225,31 @@ export const ItemsInformation = ({
 
   const taxParser = () => {
     const subtotal = subTotalParser().replace(/,/g, "");
-    const discountAmount = (Number(subtotal) * tax) / 100;
+    const discountAmount = Math.ceil((Number(subtotal) * discount) / 100);
+    const taxAmount = Math.ceil(
+      ((Number(subtotal) - discountAmount) * tax) / 100
+    );
 
     return priceCurrency === "IDR"
-      ? thousandSeparatorFormatter(String(discountAmount))
-      : String(discountAmount);
+      ? thousandSeparatorFormatter(String(taxAmount))
+      : String(taxAmount);
   };
 
   const totalParser = () => {
     const subtotal = subTotalParser().replace(/,/g, "");
-    const discountAmount = (Number(subtotal) * discount) / 100;
-    const taxAmount = (Number(subtotal) * tax) / 100;
+    const discountAmount = Math.ceil((Number(subtotal) * discount) / 100);
 
-    const total = Number(subtotal) - discountAmount - taxAmount;
+    const taxAmount = Math.ceil(
+      ((Number(subtotal) - discountAmount) * tax) / 100
+    );
+
+    const total = Number(subtotal) - discountAmount + taxAmount;
 
     return priceCurrency === "IDR"
       ? thousandSeparatorFormatter(String(Math.ceil(total)))
       : String(total);
   };
+
   return (
     <div>
       <div className="bg-blue-900 text-white p-3 font-semibold">ITEMS</div>
@@ -262,18 +300,28 @@ export const ItemsInformation = ({
               <Select
                 name="itemId"
                 required
-                value={item.id}
+                value={item.id ?? ""}
                 onValueChange={(val) => handleSelectItem(index, val)}
               >
                 <SelectTrigger className="border-none rounded-none pl-1 shadow-none py-2">
                   <SelectValue placeholder="Select Product" />
                 </SelectTrigger>
                 <SelectContent>
-                  {supplierProduct.map((product, index) => (
-                    <SelectItem key={product.name + index} value={product.id}>
-                      {product.name}
-                    </SelectItem>
-                  ))}
+                  {supplierProduct.map((product, index) => {
+                    const isSelected = items.some(
+                      (i) => i.id === product.itemId
+                    );
+
+                    return (
+                      <SelectItem
+                        className={isSelected ? "hidden" : ""}
+                        key={product.name + index}
+                        value={product.itemId}
+                      >
+                        {product.name}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -365,6 +413,7 @@ export const ItemsInformation = ({
               <span className="col-span-3 pr-1 ml-auto my-2">
                 {subTotalParser()}
               </span>
+              <input name="subTotal" type="hidden" value={subTotalParser()} />
             </p>
 
             <p className="grid-cols-4 grid items-center w-full text-lg">
@@ -374,15 +423,19 @@ export const ItemsInformation = ({
                 onChange={(e) => setDiscount(Number(e.currentTarget.value))}
                 placeholder="Enter Discount"
                 onInput={(e) => {
-                  e.currentTarget.value = e.currentTarget.value.replace(
-                    /\D/g,
-                    ""
-                  );
+                  e.currentTarget.value = e.currentTarget.value
+                    .replace(/[^0-9.]/g, "")
+                    .replace(/(\..*?)\..*/g, "$1");
                 }}
-                maxLength={3}
+                maxLength={5}
                 className="col-span-1 text-lg flex pr-1 border-none rounded-none pl-1 shadow-none py-2"
               />
               <span className="col-span-2">{discountParser()}</span>
+              <input
+                name="discountTotal"
+                type="hidden"
+                value={discountParser()}
+              />
             </p>
 
             <p className="ml-auto w-full items-center text-lg grid-cols-4 grid">
@@ -391,20 +444,21 @@ export const ItemsInformation = ({
                 name="tax"
                 onChange={(e) => setTax(Number(e.currentTarget.value))}
                 onInput={(e) => {
-                  e.currentTarget.value = e.currentTarget.value.replace(
-                    /\D/g,
-                    ""
-                  );
+                  e.currentTarget.value = e.currentTarget.value
+                    .replace(/[^0-9.]/g, "")
+                    .replace(/(\..*?)\..*/g, "$1");
                 }}
-                maxLength={3}
+                maxLength={5}
                 placeholder="Enter Tax"
                 className="col-span-1 pr-1 text-lg border-none rounded-none pl-1 shadow-none py-2"
               />
               <span className="col-span-2 ">{taxParser()}</span>
+              <input name="taxTotal" type="hidden" value={taxParser()} />
             </p>
             <p className="ml-auto w-full items-center grid-cols-3 grid font-semibold text-lg">
               <span className="col-span-1 text-left my-2">Total Amount</span>
               <span className="col-span-2 pr-1 ml-auto">{totalParser()}</span>
+              <input name="grandTotal" type="hidden" value={totalParser()} />
             </p>
           </div>
         </div>

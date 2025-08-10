@@ -44,6 +44,12 @@ const createPOSchema = z.object({
     z.string().email("Invalid email"),
     z.literal(""),
   ]),
+  discount: z.string().min(1),
+  tax: z.string().min(1),
+  subTotal: z.string().min(1),
+  discountTotal: z.string().min(1),
+  taxTotal: z.string().min(1),
+  grandTotal: z.string().min(1),
   customerContactPhone: z.union([z.string(), z.literal("")]),
   priceCurrency: z.enum(["YUAN", "IDR"]),
   items: z
@@ -79,16 +85,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customerContactPhone,
     priceCurrency,
     supplierContactId,
+    discount,
+    tax,
+    discountTotal,
+    grandTotal,
+    subTotal,
+    taxTotal,
   } = result.data;
 
   await caller.purchasing.PO.createPO({
     supplierId,
     items,
+    discount,
+    tax,
     customerContactEmail,
     customerContactName,
     customerContactPhone,
     priceCurrency,
     supplierContactId,
+    discountTotal,
+    grandTotal,
+    subTotal,
+    taxTotal,
   });
 
   return redirect(`/${companyId}/purchasing/PO`);
@@ -162,6 +180,7 @@ export default function POCreate() {
           <POHeader loaderData={loaderData} fetcherPOFormat={fetcherPOFormat} />
 
           <SupplierInformation
+            companyId={params.companyId}
             setSelectedSupplierId={setSelectedSupplierId}
             loaderData={loaderData}
           />
