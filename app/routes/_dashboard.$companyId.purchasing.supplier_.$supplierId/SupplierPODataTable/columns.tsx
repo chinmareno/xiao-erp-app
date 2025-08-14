@@ -1,15 +1,5 @@
 import { $Enums } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 
 export type SupplierPO = {
   id: string;
@@ -21,6 +11,7 @@ export type SupplierPO = {
   PONumber: string;
   lastReceivedDate: Date | null;
   expectedFullReceivedDate: Date | null;
+  supplierTaxId: string | null;
   totalItemTypes: number;
 };
 
@@ -35,16 +26,23 @@ export const columns: ColumnDef<SupplierPO>[] = [
     header: "PO Number",
   },
   {
-    accessorKey: "status",
+    accessorKey: "supplierName",
+    header: "Supplier",
+  },
+  {
+    accessorKey: "supplierContactName",
+    header: "Supplier Contact Person",
+  },
+  {
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
       return (
         <span
           className={`px-2 py-1 rounded-full text-xs ${
-            status === "RECEIVED"
-              ? "bg-green-100 text-green-800"
-              : "bg-yellow-100 text-yellow-800"
+            status === "RECEIVED" && "bg-green-100 text-green-800"
+          } ${status === "UNRECEIVED" && "bg-yellow-100 text-yellow-800"} ${
+            status === "INACTIVE" && "bg-red-100 text-red-800"
           }`}
         >
           {status}
@@ -53,48 +51,20 @@ export const columns: ColumnDef<SupplierPO>[] = [
     },
   },
   {
-    header: "expectedFullReceivedDate",
-    cell: ({ row }) => {
-      const date = row.original.expectedFullReceivedDate;
-      return date ? new Date(date).toLocaleDateString() : "N/A";
-    },
+    header: "Tax Id (NPWP)",
+    cell: ({ row }) =>
+      row.original.supplierTaxId || "Not VAT-Registered (Non-PKP)",
   },
   {
     accessorKey: "totalItemTypes",
     header: "Total Item Types",
   },
   {
-    accessorKey: "createdAt",
-    header: "Created Date",
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+    header: "Created At",
+    cell: ({ row }) => row.original.createdAt.toLocaleDateString(),
   },
   {
-    id: "actions",
-    header: "Action",
-    cell: ({ row }) => {
-      const po = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{row.getValue("poNumber")}</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(po.id)}
-            >
-              Copy PO ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
-            <DropdownMenuItem>View Details</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    header: "Expected Received Date",
+    cell: ({ row }) => row.original.expectedFullReceivedDate || "N/A",
   },
 ];

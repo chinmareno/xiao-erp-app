@@ -24,6 +24,7 @@ type PO = {
   isActive: boolean;
   lastReceivedDate: Date | null;
   expectedFullReceivedDate: Date | null;
+  totalItemTypes: number;
 };
 
 export const columns: ColumnDef<PO>[] = [
@@ -41,17 +42,34 @@ export const columns: ColumnDef<PO>[] = [
     header: "Supplier",
   },
   {
-    accessorKey: "supplierName",
+    accessorKey: "supplierContactName",
     header: "Supplier Contact Person",
   },
   {
-    accessorKey: "status",
     header: "Status",
+    cell: ({ row }) => {
+      const status = row.original.status;
+      return (
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            status === "RECEIVED" && "bg-green-100 text-green-800"
+          } ${status === "UNRECEIVED" && "bg-yellow-100 text-yellow-800"} ${
+            status === "INACTIVE" && "bg-red-100 text-red-800"
+          }`}
+        >
+          {status}
+        </span>
+      );
+    },
   },
   {
     header: "Tax Id (NPWP)",
     cell: ({ row }) =>
       row.original.supplierTaxId || "Not VAT-Registered (Non-PKP)",
+  },
+  {
+    accessorKey: "totalItemTypes",
+    header: "Total Item Types",
   },
   {
     header: "Created At",

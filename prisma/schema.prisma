@@ -232,6 +232,7 @@ model StockItem {
 enum PurchaseOrderStatus {
   UNRECEIVED
   RECEIVED
+  INACTIVE
 }
 
 model PONumberFormat {
@@ -269,7 +270,7 @@ model PurchaseOrder {
 
   discount                   Float 
   tax                        Float 
-    subTotal                 String
+  subTotal                 String
   discountTotal                String
   taxTotal                 String
   grandTotal                 String

@@ -175,6 +175,7 @@ export const supplierRouter = createTRPCRouter({
       const supplierPOsWithTotalItemTypes = supplierPOs.map((PO) => ({
         ...PO,
         totalItemTypes: poItemsCountsObj[PO.id],
+        supplierTaxId: supplierDetails.taxId,
       }));
 
       return supplierPOsWithTotalItemTypes;

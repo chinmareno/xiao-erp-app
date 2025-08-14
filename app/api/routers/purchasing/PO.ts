@@ -5,8 +5,36 @@ const createPOSchema = z.object({
   supplierContactId: z.string().min(1, "Contact is required"),
   supplierId: z.string().min(1, "Supplier is required"),
   customerContactName: z.string().min(1, "Customer contact name is required"),
-  discount: z.string().min(1),
-  tax: z.string().min(1),
+  discount: z.string(),
+  tax: z.string(),
+  subTotal: z.string().min(1),
+  discountTotal: z.string().min(1),
+  taxTotal: z.string().min(1),
+  grandTotal: z.string().min(1),
+  customerContactEmail: z.union([
+    z.string().email("Invalid email"),
+    z.literal(""),
+  ]),
+  customerContactPhone: z.union([z.string(), z.literal("")]),
+  priceCurrency: z.enum(["YUAN", "IDR"]),
+  items: z
+    .array(
+      z.object({
+        itemId: z.string().min(1, "Product is required"),
+        quantity: z.number().min(1, "Quantity must be at least 1"),
+        itemCost: z.number().min(1, "Item cost is required"),
+        unit: z.string().min(1, "Unit is required"),
+      })
+    )
+    .min(1, "At least one item is required"),
+});
+const editPOSchema = z.object({
+  POId: z.string().min(1),
+  supplierContactId: z.string().min(1, "Contact is required"),
+  supplierId: z.string().min(1, "Supplier is required"),
+  customerContactName: z.string().min(1, "Customer contact name is required"),
+  discount: z.string(),
+  tax: z.string(),
   subTotal: z.string().min(1),
   discountTotal: z.string().min(1),
   taxTotal: z.string().min(1),
@@ -224,11 +252,25 @@ export const PORouter = createTRPCRouter({
     const POs = await ctx.db.purchaseOrder.findMany({
       where: { companyId: ctx.companyId },
       include: { supplier: { select: { taxId: true } } },
+      orderBy: { createdAt: "desc" },
     });
+
+    const poIds = POs.map((po) => po.id);
+
+    const poItemCounts = await ctx.db.purchaseOrderItem.groupBy({
+      by: ["purchaseOrderId"],
+      _count: { purchaseOrderId: true },
+      where: { purchaseOrderId: { in: poIds } },
+    });
+
+    const poItemsCountsObj = Object.fromEntries(
+      poItemCounts.map((po) => [po.purchaseOrderId, po._count.purchaseOrderId])
+    );
 
     const flatPOs = POs.map(({ supplier, ...rest }) => ({
       ...rest,
       supplierTaxId: supplier?.taxId ?? null,
+      totalItemTypes: poItemsCountsObj[rest.id] ?? 0,
     }));
 
     return flatPOs;
@@ -255,5 +297,111 @@ export const PORouter = createTRPCRouter({
       }
 
       return PO;
+    }),
+
+  changePOStatusByPOId: purchasingProcedure
+    .input(
+      z.object({
+        POId: z.string().min(1),
+        status: z.enum(["UNRECEIVED", "RECEIVED", "INACTIVE"]),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { POId, status } = input;
+
+      await ctx.db.purchaseOrder.update({
+        where: { id: POId, companyId: ctx.companyId },
+        data: { status },
+      });
+    }),
+
+  editPOByPOId: purchasingProcedure
+    .input(editPOSchema)
+    .mutation(async ({ ctx, input }) => {
+      const {
+        customerContactEmail,
+        customerContactName,
+        customerContactPhone,
+        items,
+        priceCurrency,
+        supplierContactId,
+        supplierId,
+        discount,
+        tax,
+        discountTotal,
+        taxTotal,
+        subTotal,
+        grandTotal,
+        POId,
+      } = input;
+
+      const idrYuanRate = await ctx.db.yuanIdrRate.findFirst();
+      if (!idrYuanRate) throw new Error("Yuan to IDR rate not found");
+
+      const { idrToYuanRate, yuanToIdrRate } = idrYuanRate;
+
+      const supplierDetail = await ctx.db.supplier.findUnique({
+        where: { id: supplierId },
+      });
+      const supplierContactDetail = await ctx.db.contact.findUnique({
+        where: { id: supplierContactId },
+      });
+      const customerDetail = await ctx.db.company.findUnique({
+        where: { id: ctx.companyId },
+      });
+
+      if (!supplierDetail || !customerDetail || !supplierContactDetail) {
+        throw new Error("Internal Server Error");
+      }
+
+      let updatedItems;
+      if (priceCurrency === "YUAN") {
+        updatedItems = items.map((item) => ({
+          itemId: item.itemId,
+          quantity: item.quantity,
+          costYuan: item.itemCost,
+          costIdr: item.itemCost * yuanToIdrRate,
+          unit: item.unit,
+        }));
+      } else {
+        updatedItems = items.map((item) => ({
+          itemId: item.itemId,
+          quantity: item.quantity,
+          costIdr: item.itemCost,
+          costYuan: item.itemCost * idrToYuanRate,
+          unit: item.unit,
+        }));
+      }
+
+      await ctx.db.purchaseOrder.update({
+        where: { id: POId },
+        data: {
+          discountTotal,
+          grandTotal,
+          subTotal,
+          taxTotal,
+          priceCurrency,
+          customerName: customerDetail.name,
+          supplierName: supplierDetail.name,
+          customerAddress: customerDetail.address,
+          customerContactName,
+          supplierAdress: supplierDetail.address,
+          supplierContactId,
+          supplierContactName: supplierContactDetail.name,
+          supplierContactPhone: supplierContactDetail.phone,
+          supplierContactEmail: supplierContactDetail.email,
+          customerContactEmail,
+          customerContactPhone,
+          supplierId,
+          tax: Number(tax),
+          discount: Number(discount),
+          companyId: ctx.companyId,
+
+          items: {
+            deleteMany: {},
+            createMany: { data: updatedItems },
+          },
+        },
+      });
     }),
 });

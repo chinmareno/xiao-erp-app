@@ -1,3 +1,4 @@
+import { useNavigate, useParams } from "@remix-run/react";
 import {
   ColumnDef,
   flexRender,
@@ -19,7 +20,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends { id: string }, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
@@ -28,6 +29,9 @@ export function DataTable<TData, TValue>({
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+  const navigate = useNavigate();
+  const params = useParams();
+  const companyId = params.companyId as string;
 
   return (
     <div className="rounded-md border">
@@ -54,8 +58,12 @@ export function DataTable<TData, TValue>({
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
+                onClick={() =>
+                  navigate(`/${companyId}/purchasing/PO/${row.original.id}`)
+                }
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
+                className="hover:bg-gray-100 cursor-pointer"
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>

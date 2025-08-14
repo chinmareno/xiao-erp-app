@@ -48,6 +48,7 @@ type contactErrorsType = {
 
 type Props = {
   loaderData: Awaited<ReturnType<typeof createPoLoaderType>>;
+  selectedSupplierId: string | null;
   setSelectedSupplierId: React.Dispatch<React.SetStateAction<string | null>>;
   companyId?: string;
 };
@@ -55,6 +56,7 @@ type Props = {
 export const SupplierInformation = ({
   loaderData,
   setSelectedSupplierId,
+  selectedSupplierId,
   companyId,
 }: Props) => {
   const [openContactDialog, setOpenContactDialog] = useState(false);
@@ -136,6 +138,7 @@ export const SupplierInformation = ({
         <div className="p-3 border-r border-gray-300">
           <div className="text-xs text-gray-600 mb-1">SUPPLIER NAME</div>
           <Select
+            value={selectedSupplierId || undefined}
             onValueChange={(value) => {
               setSelectedSupplierId(value);
               handleSupplierChange(value);

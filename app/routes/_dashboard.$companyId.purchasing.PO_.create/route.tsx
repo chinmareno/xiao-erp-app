@@ -12,7 +12,7 @@ import {
   useParams,
 } from "@remix-run/react";
 import { createCallerWithContext } from "~/api/root.server";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
@@ -22,6 +22,7 @@ import { CustomerInformation } from "./CustomerInformation";
 import { POHeader } from "./POHeader";
 import { ChangePONumberPrefix } from "./ChangePONumberPrefix";
 import { Item, ItemsInformation } from "./ItemsInformation";
+import { useSupplierPOStore } from "~/hooks/useSupplierPOStore";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -44,8 +45,8 @@ const createPOSchema = z.object({
     z.string().email("Invalid email"),
     z.literal(""),
   ]),
-  discount: z.string().min(1),
-  tax: z.string().min(1),
+  discount: z.string(),
+  tax: z.string(),
   subTotal: z.string().min(1),
   discountTotal: z.string().min(1),
   taxTotal: z.string().min(1),
@@ -122,7 +123,10 @@ export async function clientAction({
   );
   const result = await createPOSchema.safeParseAsync(fg);
 
-  if (result.error) return { errors: result.error.format() };
+  if (result.error) {
+    console.log({ errors: result.error.format() });
+    return { errors: result.error.format() };
+  }
   return serverAction<typeof action>();
 }
 
@@ -138,6 +142,8 @@ export default function POCreate() {
   const [items, setItems] = useState<Item[]>([
     { id: undefined, quantity: "", unit: "pcs", price: "" },
   ]);
+
+  const { selectedSupplierPO, setSelectedSupplierPO } = useSupplierPOStore();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -171,6 +177,13 @@ export default function POCreate() {
     );
   };
 
+  useEffect(() => {
+    if (selectedSupplierPO) {
+      setSelectedSupplierId(selectedSupplierPO);
+      setSelectedSupplierPO(null);
+    }
+  }, []);
+
   return (
     <>
       <ChangePONumberPrefix fetcherPOFormat={fetcherPOFormat} params={params} />
@@ -181,6 +194,7 @@ export default function POCreate() {
 
           <SupplierInformation
             companyId={params.companyId}
+            selectedSupplierId={selectedSupplierId}
             setSelectedSupplierId={setSelectedSupplierId}
             loaderData={loaderData}
           />
