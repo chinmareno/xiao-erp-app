@@ -8,6 +8,7 @@ export const createCallerWithContext = async (
   companyId?: string
 ) => {
   const createContext = await createTRPCContext(req, companyId);
+
   return createCaller(createContext, {
     onError: (err) => {
       if (err.error.code === "INTERNAL_SERVER_ERROR")

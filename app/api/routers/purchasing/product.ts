@@ -7,7 +7,7 @@ export const createProductSchema = z.object({
   itemId: z.string().min(1, "Item id is required").optional(),
   itemName: z.string().min(1, "Item name is required").optional(),
   itemImage: z.string().nullable().optional(),
-  price: z.string().min(0, "Price must be a positive number"),
+  price: z.string().min(1, "Price must be a positive number"),
   priceCurrency: z.string().min(1, "Price currency is required"),
 });
 
@@ -212,20 +212,28 @@ export const productRouter = createTRPCRouter({
     );
 
     const result = Object.values(grouped).map((group) => {
-      const formatRange = (prices: number[], symbol: string) => {
+      const formatRange = (
+        prices: number[],
+        symbol: string,
+        formatIDR = false
+      ) => {
         if (prices.length === 0) return null;
         const min = Math.min(...prices);
         const max = Math.max(...prices);
+
+        const formatPrice = (value: number) =>
+          formatIDR ? value.toLocaleString("en-US") : value.toString();
+
         return min === max
-          ? `${symbol}${min}`
-          : `${symbol}${min} – ${symbol}${max}`;
+          ? `${symbol}${formatPrice(min)}`
+          : `${symbol}${formatPrice(min)} – ${symbol}${formatPrice(max)}`;
       };
 
       return {
         id: group.id,
         name: group.name,
         supplierCount: group.supplierIds.size,
-        priceRangeIDR: formatRange(group.IDR, "Rp"),
+        priceRangeIDR: formatRange(group.IDR, "Rp ", true),
         priceRangeYUAN: formatRange(group.YUAN, "¥"),
       };
     });
@@ -277,5 +285,46 @@ export const productRouter = createTRPCRouter({
           where: { id: deletedSupplierProduct.itemId },
         });
       }
+    }),
+
+  getSupplierProductByItemId: purchasingProcedure
+    .input(z.object({ itemId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const { itemId } = input;
+
+      const supplierProduct = await ctx.db.supplierProduct.findMany({
+        where: { itemId },
+        include: { supplier: true, item: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const flattenedSupplierProduct = supplierProduct.map((sp) => ({
+        ...sp,
+        name: sp.item.name,
+        supplierName: sp.supplier.name,
+        price:
+          sp.priceCurrency === "IDR"
+            ? Number(sp.price).toLocaleString("en-US")
+            : sp.price,
+      }));
+      return flattenedSupplierProduct;
+    }),
+
+  editPriceSupplierProductBySupplierIdAndItemId: purchasingProcedure
+    .input(
+      z.object({
+        supplierId: z.string().min(1),
+        itemId: z.string().min(1),
+        price: z.string().min(1, "Price must be a positive number"),
+        priceCurrency: z.string().min(1, "Price currency is required"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { supplierId, itemId, price, priceCurrency } = input;
+
+      await ctx.db.supplierProduct.updateMany({
+        where: { itemId, supplierId },
+        data: { price, priceCurrency },
+      });
     }),
 });

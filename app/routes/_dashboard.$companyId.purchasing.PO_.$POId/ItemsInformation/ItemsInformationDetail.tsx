@@ -1,11 +1,11 @@
 import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
-import { loader } from "./route";
+import { loader } from "../route";
 
 type Props = {
   loaderData: Awaited<ReturnType<typeof loader>>;
 };
 
-export const ItemsInformation = ({ loaderData }: Props) => {
+export const ItemsInformationDetail = ({ loaderData }: Props) => {
   const itemTotalParser = (itemPrice: number, itemQuantity: number) => {
     const isIDR = loaderData.priceCurrency === "IDR";
 

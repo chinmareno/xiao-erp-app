@@ -3,11 +3,17 @@ import { CustomerInformation } from "./CustomerInformation";
 import { POHeader } from "./POHeader";
 import { SupplierInformation } from "./SupplierInformation";
 import { createCallerWithContext } from "~/api/root.server";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useParams,
+} from "@remix-run/react";
 import { ItemsInformation } from "./ItemsInformation";
 import { Button } from "~/components/ui/button";
 import POStatusSelect from "./POStatusSelect";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Item } from "./ItemsInformation/ItemsInformationEdit";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -35,36 +41,84 @@ export default function PODetail() {
     null
   );
   const fetcher = useFetcher<typeof action>();
+  const fetcherSubmit = useFetcher();
+
   const loaderData = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [items, setItems] = useState<Item[]>([
+    { id: undefined, quantity: "", unit: "pcs", price: "" },
+  ]);
+
+  const params = useParams();
+
+  const isReceivedPO = loaderData.status === "RECEIVED";
+  useEffect(() => {
+    if (isReceivedPO) setSelectedSupplierId(loaderData.supplierId);
+  }, []);
+
   const toggleEditing = () => {
     setIsEditing((prev) => !prev);
     fetcher.submit({}, { method: "post" });
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const formObject = Object.fromEntries(formData.entries());
+    const itemsArray = items
+      .filter((item) => item.id && item.quantity && item.price)
+      .map((item) => ({
+        itemId: item.id,
+        quantity: Number(item.quantity.replace(/,/g, "")),
+        itemCost: Number(item.price.replace(/,/g, "")),
+        unit: item.unit,
+      }));
+    const completeData = {
+      ...formObject,
+      items: itemsArray as {
+        itemId: string;
+        quantity: number;
+        itemCost: number;
+        unit: string;
+      }[],
+    };
+
+    fetcherSubmit.submit(
+      { data: JSON.stringify(completeData) },
+      {
+        method: "post",
+        action: "/api/editPO",
+      }
+    );
+  };
+
   return (
-    <>
+    <form onSubmit={handleSubmit}>
+      <input type="hidden" name="POId" value={params.POId as string} />
+      <input
+        type="hidden"
+        name="companyId"
+        value={params.companyId as string}
+      />
       <div className="flex justify-between mb-20 flex-col relative items-center">
         <h1 className="text-2xl font-bold">Purchase Order Details</h1>
         <div className="self-end mr-4 items-center">
           {isEditing ? (
             <>
-              <Button onClick={() => setIsEditing(false)} variant="secondary">
+              <Button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                variant="secondary"
+              >
                 Cancel
               </Button>
-              <Button
-                onClick={() => {
-                  setIsEditing(false);
-                }}
-                variant="default"
-                className=" ml-2"
-              >
+              <Button variant="default" className=" ml-2" type="submit">
                 Save Changes
               </Button>
             </>
           ) : (
-            <Button onClick={toggleEditing} variant="default">
+            <Button type="button" onClick={toggleEditing} variant="default">
               Edit PO
             </Button>
           )}
@@ -84,8 +138,15 @@ export default function PODetail() {
           loaderData={loaderData}
           isEditing={isEditing}
         />
-        <CustomerInformation loaderData={loaderData} />
-        <ItemsInformation loaderData={loaderData} />
+        <CustomerInformation isEditing={isEditing} loaderData={loaderData} />
+        <ItemsInformation
+          selectedSupplierId={selectedSupplierId}
+          items={items}
+          setItems={setItems}
+          params={params}
+          isEditing={isEditing}
+          loaderData={loaderData}
+        />
       </div>
 
       <div className="mt-8 ml-16 gap-7 flex">
@@ -93,6 +154,6 @@ export default function PODetail() {
           Back
         </Button>
       </div>
-    </>
+    </form>
   );
 }

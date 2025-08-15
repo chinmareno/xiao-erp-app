@@ -13,6 +13,8 @@ export type SupplierPO = {
   expectedFullReceivedDate: Date | null;
   supplierTaxId: string | null;
   totalItemTypes: number;
+  priceCurrency: string;
+  grandTotal: string;
 };
 
 export const columns: ColumnDef<SupplierPO>[] = [
@@ -66,5 +68,14 @@ export const columns: ColumnDef<SupplierPO>[] = [
   {
     header: "Expected Received Date",
     cell: ({ row }) => row.original.expectedFullReceivedDate || "N/A",
+  },
+  {
+    header: "Total Amount",
+    cell: ({ row }) => {
+      const isIDR = row.original.priceCurrency === "IDR";
+      const grandTotal = row.original.grandTotal;
+
+      return isIDR ? `Rp ${grandTotal}` : `¥${grandTotal}`;
+    },
   },
 ];

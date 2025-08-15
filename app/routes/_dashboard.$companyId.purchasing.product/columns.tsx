@@ -1,6 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 
 type Product = {
+  id: string;
   name: string;
   supplierCount: number;
   priceRangeIDR: string | null;

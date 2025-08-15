@@ -92,6 +92,8 @@ export const SupplierInformation = ({
   POCreateLoaderData,
   createPOFetcher,
 }: Props) => {
+  const isReceivedPO = loaderData.status === "RECEIVED";
+
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
     null
   );
@@ -134,14 +136,15 @@ export const SupplierInformation = ({
     if (
       isEditing &&
       selectedSupplier?.id === loaderData.supplierId &&
-      !selectedContact
+      !selectedContact &&
+      !isReceivedPO
     ) {
       handleContactChange(loaderData.supplierContactId);
     }
   }, [contactMap]);
 
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing && !isReceivedPO) {
       setSelectedSupplierId(loaderData.supplierId);
       handleSupplierChange(loaderData.supplierId);
     }
@@ -178,7 +181,7 @@ export const SupplierInformation = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.formData]);
 
-  return !isEditing ? (
+  return !isEditing || isReceivedPO ? (
     <div className="border border-gray-300">
       <div className="bg-blue-900 text-white px-4 py-2">
         <h3 className="font-semibold text-sm">SUPPLIER INFORMATION</h3>

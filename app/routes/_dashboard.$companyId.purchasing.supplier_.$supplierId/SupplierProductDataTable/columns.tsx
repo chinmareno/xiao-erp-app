@@ -51,7 +51,7 @@ export const columns: ColumnDef<SupplierProduct>[] = [
 
       const symbol = priceCurrency === "YUAN" ? "¥" : "Rp";
       const formattedPrice = parseFloat(price).toLocaleString(
-        priceCurrency === "YUAN" ? "zh-CN" : "id-ID",
+        priceCurrency === "YUAN" ? "zh-CN" : "en-US",
         {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,

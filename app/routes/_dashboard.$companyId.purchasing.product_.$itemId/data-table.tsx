@@ -1,10 +1,10 @@
-import { useNavigate } from "@remix-run/react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useState } from "react";
 
 import {
   Table,
@@ -14,13 +14,23 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { EditSupplierProductDialog } from "./EditSupplierProductDialog";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
-export function DataTable<TData extends { id: string }, TValue>({
+type Row = {
+  supplierId: string;
+  priceCurrency: string;
+  itemId: string;
+  price: string;
+  name: string;
+  supplierName: string;
+};
+
+export function DataTable<TData extends Row, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
@@ -29,10 +39,41 @@ export function DataTable<TData extends { id: string }, TValue>({
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
-  const navigate = useNavigate();
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const [initialCurrency, setInitialCurrency] = useState("");
+  const [initialPrice, setInitialPrice] = useState("");
+  const [itemName, setItemName] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [supplierName, setSupplierName] = useState("");
+  const [itemId, setItemId] = useState("");
+
+  const handleRowClick = (row: Row) => {
+    const { itemId, name, price, priceCurrency, supplierId, supplierName } =
+      row;
+
+    setSupplierName(supplierName);
+    setSupplierId(supplierId);
+    setItemName(name);
+    setInitialPrice(price);
+    setInitialCurrency(priceCurrency);
+    setItemId(itemId);
+
+    setOpenDialog(true);
+  };
 
   return (
     <div className="rounded-md border">
+      <EditSupplierProductDialog
+        itemId={itemId}
+        supplierName={supplierName}
+        supplierId={supplierId}
+        setOpenDialog={setOpenDialog}
+        openDialog={openDialog}
+        itemName={itemName}
+        initialCurrency={initialCurrency}
+        initialPrice={initialPrice}
+      />
       <Table>
         <TableHeader className="bg-slate-100">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -56,10 +97,10 @@ export function DataTable<TData extends { id: string }, TValue>({
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
-                key={row.id}
                 className="cursor-pointer hover:bg-gray-100"
+                key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                onClick={() => navigate(row.original.id)}
+                onClick={() => handleRowClick(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
