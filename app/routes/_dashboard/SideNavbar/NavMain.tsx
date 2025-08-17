@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
-import { ChevronRight } from "lucide-react";
+import { Link, useNavigate } from "@remix-run/react";
+import { ChevronRight, DollarSign, Package, ShoppingCart } from "lucide-react";
 
 import {
   Collapsible,
@@ -18,9 +18,19 @@ import {
 } from "~/components/ui/sidebar";
 import { MODULES_SUBMODULES } from "../../../constants/companyModules";
 import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+import { useOpenDialogNavbarStore } from "~/hooks/useOpenDialogNavbarStore";
+
+const modulesIcon = {
+  PURCHASING: <ShoppingCart className="h-4 w-4" />,
+  INVENTORY: <Package className="h-4 w-4" />,
+  SALES: <DollarSign className="h-4 w-4" />,
+};
 
 export function NavMain() {
   const { company, permissions } = useCompanyStore();
+  const navigate = useNavigate();
+  const { openDialog } = useOpenDialogNavbarStore();
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>
@@ -42,13 +52,29 @@ export function NavMain() {
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={module}>
-                      {/* TODO: Module Icon */}
-                      <span>{module}</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  {!openDialog ? (
+                    <SidebarMenuButton
+                      tooltip={module}
+                      onClick={() => {
+                        navigate(
+                          `${company.id}/${module.toLocaleLowerCase()}/${
+                            MODULES_SUBMODULES[module][0]
+                          }`
+                        );
+                      }}
+                    >
+                      {modulesIcon[module]}
                     </SidebarMenuButton>
-                  </CollapsibleTrigger>
+                  ) : (
+                    <CollapsibleTrigger disabled={!openDialog} asChild>
+                      <SidebarMenuButton tooltip={module}>
+                        {modulesIcon[module]}
+                        <span>{module}</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                  )}
+
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {MODULES_SUBMODULES[module]?.map((submodule) => (

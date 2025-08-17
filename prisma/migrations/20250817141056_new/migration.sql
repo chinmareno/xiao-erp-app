@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "ItemCategory" AS ENUM ('RAW_MATERIAL', 'SUPPORTING_MATERIAL', 'FINISHED_GOODS');
+
+-- AlterTable
+ALTER TABLE "Item" ADD COLUMN     "category" "ItemCategory" NOT NULL DEFAULT 'FINISHED_GOODS';

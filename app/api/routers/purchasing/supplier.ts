@@ -120,6 +120,7 @@ export const supplierRouter = createTRPCRouter({
           id: product.id,
           itemId: product.item.id,
           name: product.item.name,
+          category: product.item.category,
           price: product.price,
           priceCurrency: product.priceCurrency,
           createdAt: product.createdAt,

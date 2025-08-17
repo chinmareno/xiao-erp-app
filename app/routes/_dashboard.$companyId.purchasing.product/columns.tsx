@@ -1,3 +1,4 @@
+import { ItemCategory } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 
 type Product = {
@@ -6,6 +7,7 @@ type Product = {
   supplierCount: number;
   priceRangeIDR: string | null;
   priceRangeYUAN: string | null;
+  category: ItemCategory;
 };
 
 export const columns: ColumnDef<Product>[] = [
@@ -17,6 +19,14 @@ export const columns: ColumnDef<Product>[] = [
   {
     accessorKey: "name",
     header: "Name",
+  },
+  {
+    accessorKey: "category",
+    header: "Category",
+    cell: ({ row }) => {
+      const category = row.original.category;
+      return category.replaceAll("_", " ");
+    },
   },
   {
     accessorKey: "supplierCount",

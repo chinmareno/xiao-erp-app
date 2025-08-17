@@ -26,6 +26,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { useInviteLinkTokenStore } from "~/hooks/useInviteLinkTokenStore";
 import { Company, User } from "@prisma/client";
+import { useOpenDialogNavbarStore } from "~/hooks/useOpenDialogNavbarStore";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await auth.api.getSession({
@@ -40,6 +41,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const companies = await caller.company.getByUserId();
 
   const role = (await createTRPCContext(request)).role;
+
+  if (process.env.DEMO_MODE && companies.length === 0) {
+    await caller.company.create({
+      name: "DemoCorp International",
+      address: "123 Innovation Drive, Tokyo, Japan",
+      industry: "Technology",
+      desc: "A demonstration company for testing and showcasing platform features.",
+    });
+    const companies = await caller.company.getByUserId();
+
+    return { user, companies, role };
+  }
 
   return { user, companies, role };
 }
@@ -59,6 +72,7 @@ export default function DashboardLayout() {
   const { token } = useInviteLinkTokenStore();
 
   const navigate = useNavigate();
+  const { openDialog, setOpenDialog } = useOpenDialogNavbarStore();
 
   useEffect(() => {
     const userCreatedAt = new Date(loaderData.user.createdAt);
@@ -84,7 +98,7 @@ export default function DashboardLayout() {
   }, [token]);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={openDialog} onOpenChange={setOpenDialog}>
       <SideNavbar
         role={loaderData.role}
         user={loaderData.user}

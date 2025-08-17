@@ -21,6 +21,7 @@ import { createCallerWithContext } from "~/api/root.server";
 import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { TRPCError } from "@trpc/server";
 import { toast } from "sonner";
+import { ItemCategory } from "@prisma/client";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -42,8 +43,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.log({ errors: result.error.format() });
     return null;
   }
-  const { itemId, supplierId, itemName, price, itemImage, priceCurrency } =
-    result.data;
+  const {
+    itemId,
+    supplierId,
+    itemName,
+    price,
+    itemImage,
+    priceCurrency,
+    itemCategory,
+  } = result.data;
 
   if (itemId) {
     try {
@@ -53,6 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         price,
         itemImage,
         priceCurrency,
+        itemCategory,
       });
     } catch (error) {
       if (error instanceof TRPCError) {
@@ -73,9 +82,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       price,
       itemImage,
       priceCurrency,
+      itemCategory,
     });
   }
   return redirect("../product");
+}
+
+enum ItemCategoryEnum {
+  RAW_MATERIAL = "RAW_MATERIAL",
+  SUPPORTING_MATERIAL = "SUPPORTING_MATERIAL",
+  FINISHED_GOODS = "FINISHED_GOODS",
 }
 
 export default function ProductCreate() {
@@ -84,6 +100,7 @@ export default function ProductCreate() {
   const loaderData = useLoaderData<typeof loader>();
   const [priceCurrency, setPriceCurrency] = useState("IDR");
   const [addNewItem, setAddNewItem] = useState(false);
+  const [itemCategory, setItemCategory] = useState<ItemCategory | "">("");
   const [price, setPrice] = useState("");
 
   useEffect(() => {
@@ -118,7 +135,16 @@ export default function ProductCreate() {
           {!addNewItem ? (
             <>
               <div className="flex gap-2">
-                <Select name="itemId" required>
+                <Select
+                  onValueChange={(val) => {
+                    const itemCategory = loaderData.products.find(
+                      (product) => product.id === val
+                    );
+                    setItemCategory(itemCategory?.category || "");
+                  }}
+                  name="itemId"
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select item" />
                   </SelectTrigger>
@@ -133,7 +159,11 @@ export default function ProductCreate() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setAddNewItem(true)}
+                  onClick={() => {
+                    setAddNewItem(true);
+                    setItemCategory("");
+                    setPrice("");
+                  }}
                 >
                   Add New
                 </Button>
@@ -145,7 +175,11 @@ export default function ProductCreate() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setAddNewItem(false)}
+                onClick={() => {
+                  setAddNewItem(false);
+                  setItemCategory("");
+                  setPrice("");
+                }}
               >
                 Cancel
               </Button>
@@ -153,6 +187,31 @@ export default function ProductCreate() {
           )}
         </div>
         <div>
+          <div>
+            <Label>Item Category</Label>
+            <Select
+              value={itemCategory}
+              onValueChange={(val) => setItemCategory(val as ItemCategory)}
+              name="itemCategory"
+              required
+              disabled={!addNewItem}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ItemCategoryEnum.RAW_MATERIAL}>
+                  Raw Material
+                </SelectItem>
+                <SelectItem value={ItemCategoryEnum.SUPPORTING_MATERIAL}>
+                  Supporting Material
+                </SelectItem>
+                <SelectItem value={ItemCategoryEnum.FINISHED_GOODS}>
+                  Finished Goods
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Label>
             <Select
               name="priceCurrency"

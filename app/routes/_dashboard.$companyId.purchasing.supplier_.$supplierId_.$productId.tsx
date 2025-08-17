@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Form, useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -20,6 +20,7 @@ import { createCallerWithContext } from "~/api/root.server";
 import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { z } from "zod";
 import { toast } from "sonner";
+import { ItemCategory } from "@prisma/client";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const supplierId = params.supplierId as string;
@@ -34,10 +35,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await caller.purchasing.product.getProductsByCompanyId();
 
   const existingItemIds = new Set(
-    supplierProducts.products.map((p) => p.itemId) // adjust field name if it's different
+    supplierProducts.products.map((p) => p.itemId)
   );
   const filteredSuppliersProducts = suppliersProducts.filter(
-    (sp) => !existingItemIds.has(sp.id) // sp.id here is your itemId from getProductsByCompanyId
+    (sp) => !existingItemIds.has(sp.id)
   );
 
   if (supplierProducts === null) throw new Error("Not Found");
@@ -48,6 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 const EditProductSchema = z.object({
   itemId: z.string().min(1, "Item id is required").optional(),
   itemName: z.string().min(1, "Item name is required").optional(),
+  itemCategory: z.nativeEnum(ItemCategory),
   price: z.string().min(0, "Price must be a positive number"),
   priceCurrency: z.string().min(1, "Price currency is required"),
 });
@@ -62,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.log({ errors: result.error.format() });
     return null;
   }
-  const { itemId, itemName, price, priceCurrency } = result.data;
+  const { itemId, itemName, price, priceCurrency, itemCategory } = result.data;
   const normalizedPrice = price.replace(/,/g, "");
 
   const supplierId = params.supplierId as string;
@@ -75,6 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       supplierId,
       supplierProductId,
       itemId,
+      itemCategory,
     });
   } else {
     await caller.purchasing.product.editProduct({
@@ -83,12 +86,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
       supplierId,
       supplierProductId,
       itemName,
+      itemCategory,
     });
   }
 
   return redirect(
     `/${params.companyId}/purchasing/supplier/${params.supplierId}`
   );
+}
+
+enum ItemCategoryEnum {
+  RAW_MATERIAL = "RAW_MATERIAL",
+  SUPPORTING_MATERIAL = "SUPPORTING_MATERIAL",
+  FINISHED_GOODS = "FINISHED_GOODS",
 }
 
 export default function ProductEdit() {
@@ -103,19 +113,9 @@ export default function ProductEdit() {
 
   const [priceCurrency, setPriceCurrency] = useState("IDR");
   const [price, setPrice] = useState("");
-  const [item, setItem] = useState("");
+  const [itemName, setItemName] = useState("");
+  const [itemCategory, setItemCategory] = useState<ItemCategory | "">("");
   const [useExistingItem, setUseExistingItem] = useState(true);
-
-  useEffect(() => {
-    if (!selectedProduct || selectedProduct.name === item) return;
-
-    setPriceCurrency(selectedProduct.priceCurrency);
-    setItem(selectedProduct.name);
-    const isIdr = selectedProduct.priceCurrency === "IDR";
-
-    const formattedValue = thousandSeparatorFormatter(selectedProduct.price);
-    isIdr ? setPrice(formattedValue) : setPrice(selectedProduct.price);
-  }, [loaderData, selectedProduct]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (!selectedProduct) {
@@ -123,7 +123,7 @@ export default function ProductEdit() {
       return toast.error("Invalid Product Id");
     }
 
-    const unchangeName = selectedProduct.name === item.trim();
+    const unchangeName = selectedProduct.name === itemName.trim();
     const unchangeItemPriceCurrency =
       selectedProduct.priceCurrency === priceCurrency;
     const normalizedOldPrice = selectedProduct.price;
@@ -179,7 +179,11 @@ export default function ProductEdit() {
                     required
                     name="itemId"
                     onValueChange={(val) => {
-                      setItem(val);
+                      const itemCategory =
+                        loaderData.filteredSuppliersProducts.find(
+                          (product) => val === product.id
+                        );
+                      setItemCategory(itemCategory?.category || "");
                     }}
                   >
                     <SelectTrigger className="mb-1">
@@ -203,7 +207,7 @@ export default function ProductEdit() {
                       className="text-xs pl-0 text-muted-foreground italic"
                       onClick={() => {
                         setUseExistingItem((prev) => !prev);
-                        setItem("");
+                        setItemName("");
                       }}
                     >
                       click here.
@@ -214,8 +218,8 @@ export default function ProductEdit() {
                 <>
                   <Input
                     name="itemName"
-                    value={item}
-                    onChange={(e) => setItem(e.currentTarget.value)}
+                    value={itemName}
+                    onChange={(e) => setItemName(e.currentTarget.value)}
                     placeholder="Enter new item name"
                     required
                   />
@@ -225,7 +229,11 @@ export default function ProductEdit() {
                       type="button"
                       variant="link"
                       className="text-xs pl-0 text-muted-foreground italic"
-                      onClick={() => setItem(selectedProduct?.name || "")}
+                      onClick={() => {
+                        setItemName(selectedProduct?.name || "");
+                        setPriceCurrency(selectedProduct?.priceCurrency || "");
+                        setItemCategory(selectedProduct?.category || "");
+                      }}
                     >
                       click here to auto-fill it.
                     </Button>{" "}
@@ -240,14 +248,39 @@ export default function ProductEdit() {
               className="mb-2"
               onClick={() => {
                 setUseExistingItem((prev) => !prev);
-                setItem("");
+                setItemName("");
+                setItemCategory("");
+                setPrice("");
               }}
             >
               {useExistingItem
                 ? "Create New Item Name"
                 : "Select Existing Item Name"}
             </Button>
-
+            <div>
+              <Label>Item Category</Label>
+              <Select
+                value={itemCategory}
+                onValueChange={(val) => setItemCategory(val as ItemCategory)}
+                name="itemCategory"
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ItemCategoryEnum.RAW_MATERIAL}>
+                    Raw Material
+                  </SelectItem>
+                  <SelectItem value={ItemCategoryEnum.SUPPORTING_MATERIAL}>
+                    Supporting Material
+                  </SelectItem>
+                  <SelectItem value={ItemCategoryEnum.FINISHED_GOODS}>
+                    Finished Goods
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>
                 <Select
@@ -257,6 +290,7 @@ export default function ProductEdit() {
                     setPriceCurrency(val);
                     setPrice("");
                   }}
+                  required
                 >
                   <SelectTrigger className="pl-0 border-none mb-1 rounded-none shadow-none py-2">
                     <SelectValue />
@@ -300,6 +334,7 @@ export default function ProductEdit() {
                 value={
                   priceCurrency === "IDR" ? price.replace(/,/g, "") : price
                 }
+                required
               />
             </div>
 

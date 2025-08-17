@@ -16,7 +16,7 @@ export const companyRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.company.create({
+      const companyId = await ctx.db.company.create({
         data: {
           name: input.name,
           address: input.address,
@@ -30,7 +30,10 @@ export const companyRouter = createTRPCRouter({
           },
           poNumberFormat: { create: { prefix: "PO" } },
         },
+        select: { id: true },
       });
+
+      return companyId;
     }),
 
   getAll: superAdminProcedure.query(async ({ ctx }) => {

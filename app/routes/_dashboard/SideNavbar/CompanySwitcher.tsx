@@ -1,4 +1,4 @@
-import { ChevronsUpDown, Plus } from "lucide-react";
+import { Building, ChevronsUpDown, Plus } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -39,6 +39,7 @@ export function CompanySwitcher({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
+              <Building />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
                   {company?.name ?? "No Company Yet"}

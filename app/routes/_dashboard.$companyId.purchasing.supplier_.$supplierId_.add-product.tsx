@@ -47,8 +47,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.log({ errors: result.error.format() });
     return null;
   }
-  const { itemId, itemName, price, itemImage, priceCurrency, supplierId } =
-    result.data;
+  const {
+    itemId,
+    itemName,
+    price,
+    itemImage,
+    priceCurrency,
+    supplierId,
+    itemCategory,
+  } = result.data;
 
   if (itemId) {
     try {
@@ -58,6 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         price,
         itemImage,
         priceCurrency,
+        itemCategory,
       });
     } catch (error) {
       if (error instanceof TRPCError) {
@@ -78,6 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       price,
       itemImage,
       priceCurrency,
+      itemCategory,
     });
   }
   return redirect(`/${companyId}/purchasing/supplier/${supplierId}`);

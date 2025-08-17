@@ -1,3 +1,4 @@
+import { type ItemCategory } from "@prisma/client";
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { ColumnDef, type Row } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
@@ -28,6 +29,7 @@ export type SupplierProduct = {
   id: string;
   name: string;
   price: string;
+  category: ItemCategory;
   priceCurrency: string;
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +45,15 @@ export const columns: ColumnDef<SupplierProduct>[] = [
     accessorKey: "name",
     header: "Item Name",
   },
+  {
+    accessorKey: "category",
+    header: "Category",
+    cell: ({ row }) => {
+      const category = row.original.category;
+      return category.replaceAll("_", " ");
+    },
+  },
+
   {
     id: "price",
     header: "Price",

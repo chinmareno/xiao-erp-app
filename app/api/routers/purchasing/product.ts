@@ -1,3 +1,4 @@
+import { ItemCategory } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, purchasingProcedure } from "~/api/trpc.server";
@@ -7,6 +8,7 @@ export const createProductSchema = z.object({
   itemId: z.string().min(1, "Item id is required").optional(),
   itemName: z.string().min(1, "Item name is required").optional(),
   itemImage: z.string().nullable().optional(),
+  itemCategory: z.nativeEnum(ItemCategory),
   price: z.string().min(1, "Price must be a positive number"),
   priceCurrency: z.string().min(1, "Price currency is required"),
 });
@@ -19,7 +21,14 @@ export const productRouter = createTRPCRouter({
   createProduct: purchasingProcedure
     .input(createProductSchema)
     .mutation(async ({ ctx, input }) => {
-      const { supplierId, itemName, price, priceCurrency, itemId } = input;
+      const {
+        supplierId,
+        itemName,
+        itemCategory,
+        price,
+        priceCurrency,
+        itemId,
+      } = input;
 
       if (itemId) {
         const alreadyAdded = await ctx.db.item.findFirst({
@@ -49,6 +58,7 @@ export const productRouter = createTRPCRouter({
         await ctx.db.item.create({
           data: {
             name: itemName,
+            category: itemCategory,
             supplierProducts: { create: { supplierId, price, priceCurrency } },
           },
         });
@@ -62,6 +72,7 @@ export const productRouter = createTRPCRouter({
         supplierProductId: z.string().min(1, "Item id is required"),
         itemId: z.string().min(1, "Item id is required").optional(),
         itemName: z.string().min(1, "Item name is required").optional(),
+        itemCategory: z.nativeEnum(ItemCategory),
         price: z.string().min(0, "Price must be a positive number"),
         priceCurrency: z.string().min(1, "Price currency is required"),
       })
@@ -74,6 +85,7 @@ export const productRouter = createTRPCRouter({
         price,
         priceCurrency,
         itemId,
+        itemCategory,
       } = input;
       const oldSupplierProduct = await ctx.db.supplierProduct.findUnique({
         where: { id: supplierProductId },
@@ -87,20 +99,33 @@ export const productRouter = createTRPCRouter({
       }
 
       if (itemId) {
-        await ctx.db.supplierProduct.update({
-          where: { id: supplierProductId },
-          data: { itemId },
-        });
+        await ctx.db.$transaction([
+          ctx.db.item.update({
+            where: { id: itemId },
+            data: { category: itemCategory },
+          }),
+          ctx.db.supplierProduct.update({
+            where: { id: supplierProductId },
+            data: { itemId },
+          }),
+        ]);
       } else if (itemName?.trim() === oldSupplierProduct.item.name) {
-        await ctx.db.supplierProduct.update({
-          where: { id: supplierProductId },
-          data: { price, priceCurrency },
-        });
+        await ctx.db.$transaction([
+          ctx.db.item.updateMany({
+            where: { name: itemName?.trim() },
+            data: { category: itemCategory },
+          }),
+          ctx.db.supplierProduct.update({
+            where: { id: supplierProductId },
+            data: { price, priceCurrency },
+          }),
+        ]);
       } else if (itemName) {
         await ctx.db.$transaction([
           ctx.db.item.create({
             data: {
               name: itemName,
+              category: itemCategory,
               supplierProducts: {
                 create: { supplierId, price, priceCurrency },
               },
@@ -168,9 +193,7 @@ export const productRouter = createTRPCRouter({
         price: true,
         priceCurrency: true,
         itemId: true,
-        item: {
-          select: { name: true },
-        },
+        item: true,
         supplierId: true,
       },
     });
@@ -183,6 +206,7 @@ export const productRouter = createTRPCRouter({
           acc[key] = {
             id: sp.itemId,
             name: sp.item.name,
+            category: sp.item.category,
             supplierIds: new Set<string>(),
             IDR: [] as number[],
             YUAN: [] as number[],
@@ -205,6 +229,7 @@ export const productRouter = createTRPCRouter({
           id: string;
           name: string;
           supplierIds: Set<string>;
+          category: ItemCategory;
           IDR: number[];
           YUAN: number[];
         }
@@ -232,6 +257,7 @@ export const productRouter = createTRPCRouter({
       return {
         id: group.id,
         name: group.name,
+        category: group.category,
         supplierCount: group.supplierIds.size,
         priceRangeIDR: formatRange(group.IDR, "Rp ", true),
         priceRangeYUAN: formatRange(group.YUAN, "¥"),
@@ -302,6 +328,7 @@ export const productRouter = createTRPCRouter({
         ...sp,
         name: sp.item.name,
         supplierName: sp.supplier.name,
+        category: sp.item.category,
         price:
           sp.priceCurrency === "IDR"
             ? Number(sp.price).toLocaleString("en-US")

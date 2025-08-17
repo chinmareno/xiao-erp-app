@@ -35,7 +35,6 @@ type SideNavbarProps = React.ComponentProps<typeof Sidebar> & {
   role: "SUPERADMIN" | "USER";
 };
 
-// TODO: add feature adding new modules for company
 export function SideNavbar({ ...props }: SideNavbarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>

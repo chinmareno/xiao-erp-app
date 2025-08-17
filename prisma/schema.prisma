@@ -180,9 +180,16 @@ model Supplier {
   @@index([companyId])
 }
 
+enum ItemCategory {
+  RAW_MATERIAL
+  SUPPORTING_MATERIAL
+  FINISHED_GOODS
+}
+
 model Item {
   id        String    @id @default(cuid())
   name      String
+  category ItemCategory @default(FINISHED_GOODS)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   supplierProducts  SupplierProduct[]
@@ -202,7 +209,7 @@ model SupplierProduct {
   updatedAt          DateTime            @updatedAt
   stockItems         StockItem[]
 
-   @@index([ supplierId, itemId])
+  @@index([ supplierId, itemId])
 }
 
 model Warehouse {
