@@ -104,6 +104,8 @@ model Company {
   purchaseOrders PurchaseOrder[]
   poNumberFormat PONumberFormat?
 
+  item        Item[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -132,9 +134,16 @@ model CompanyMember {
   @@unique([userId, companyId])
 }
 
+enum ContactType {
+  SUPPLIER
+  SALES
+  INVENTORY
+}
+
 model Contact {
   id    String  @id @default(cuid())
   name  String
+  type  ContactType @default(SUPPLIER)
   email String?
   phone String?
   notes String?
@@ -189,6 +198,8 @@ enum ItemCategory {
 model Item {
   id        String    @id @default(cuid())
   name      String
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   category ItemCategory @default(FINISHED_GOODS)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -216,6 +227,7 @@ model Warehouse {
   id         String      @id @default(cuid())
   name       String
   location   String?
+  pic        String?  
   companyId  String
   company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt  DateTime    @default(now())

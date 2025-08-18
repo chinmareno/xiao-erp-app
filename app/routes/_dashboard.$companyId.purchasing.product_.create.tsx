@@ -53,8 +53,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     itemCategory,
   } = result.data;
 
-  if (itemId) {
-    try {
+  try {
+    if (itemId) {
       await caller.purchasing.product.createProduct({
         itemId,
         supplierId,
@@ -63,27 +63,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
         priceCurrency,
         itemCategory,
       });
-    } catch (error) {
-      if (error instanceof TRPCError) {
-        if (
-          error.message ===
-          "This supplier already has a product for the selected item."
-        ) {
-          return { errors: "This supplier already has this product" };
-        }
-      } else {
-        throw error;
-      }
+    } else if (itemName) {
+      await caller.purchasing.product.createProduct({
+        supplierId,
+        itemName,
+        price,
+        itemImage,
+        priceCurrency,
+        itemCategory,
+      });
     }
-  } else if (itemName) {
-    await caller.purchasing.product.createProduct({
-      supplierId,
-      itemName,
-      price,
-      itemImage,
-      priceCurrency,
-      itemCategory,
-    });
+  } catch (error) {
+    if (error instanceof TRPCError) {
+      if (
+        error.message ===
+        "This supplier already has a product for the selected item."
+      ) {
+        return { errors: "This supplier already has this product" };
+      }
+    } else {
+      throw error;
+    }
   }
   return redirect("../product");
 }
@@ -104,10 +104,9 @@ export default function ProductCreate() {
   const [price, setPrice] = useState("");
 
   useEffect(() => {
-    if (actionData?.errors) {
-      if (actionData.errors === "This supplier already has this product") {
-        toast.error("This supplier already has this product");
-      }
+    const errorMessage = actionData?.errors;
+    if (errorMessage) {
+      toast.error(errorMessage);
     }
   }, [actionData]);
 
@@ -189,10 +188,15 @@ export default function ProductCreate() {
         <div>
           <div>
             <Label>Item Category</Label>
-            <Select
-              value={itemCategory}
-              onValueChange={(val) => setItemCategory(val as ItemCategory)}
+            <input
+              type="hidden"
               name="itemCategory"
+              value={itemCategory || undefined}
+            />
+            <Select
+              name="itemCategory"
+              value={itemCategory || undefined}
+              onValueChange={(val) => setItemCategory(val as ItemCategory)}
               required
               disabled={!addNewItem}
             >

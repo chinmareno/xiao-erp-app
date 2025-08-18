@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { Form, useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { useEffect, useState } from "react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigate,
+  useParams,
+} from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -21,6 +27,7 @@ import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { z } from "zod";
 import { toast } from "sonner";
 import { ItemCategory } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const supplierId = params.supplierId as string;
@@ -70,24 +77,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const supplierId = params.supplierId as string;
   const supplierProductId = params.productId as string;
 
-  if (itemId) {
-    await caller.purchasing.product.editProduct({
-      price: normalizedPrice,
-      priceCurrency,
-      supplierId,
-      supplierProductId,
-      itemId,
-      itemCategory,
-    });
-  } else {
-    await caller.purchasing.product.editProduct({
-      price: normalizedPrice,
-      priceCurrency,
-      supplierId,
-      supplierProductId,
-      itemName,
-      itemCategory,
-    });
+  try {
+    if (itemId) {
+      await caller.purchasing.product.editProduct({
+        price: normalizedPrice,
+        priceCurrency,
+        supplierId,
+        supplierProductId,
+        itemId,
+        itemCategory,
+      });
+    } else {
+      await caller.purchasing.product.editProduct({
+        price: normalizedPrice,
+        priceCurrency,
+        supplierId,
+        supplierProductId,
+        itemName,
+        itemCategory,
+      });
+    }
+  } catch (error) {
+    if (error instanceof TRPCError) {
+      if (
+        error.message ===
+        "This supplier already has a product for the selected item."
+      ) {
+        return { errors: "This supplier already has this product" };
+      }
+    } else {
+      throw error;
+    }
   }
 
   return redirect(
@@ -102,6 +122,8 @@ enum ItemCategoryEnum {
 }
 
 export default function ProductEdit() {
+  const actionData = useActionData<typeof action>();
+
   const params = useParams();
   const productId = params.productId as string;
   const loaderData = useLoaderData<typeof loader>();
@@ -137,6 +159,14 @@ export default function ProductEdit() {
       );
     }
   };
+
+  useEffect(() => {
+    if (actionData?.errors) {
+      if (actionData.errors === "This supplier already has this product") {
+        toast.error("This supplier already has this product");
+      }
+    }
+  }, [actionData]);
 
   return (
     <div className="container mx-auto py-10">

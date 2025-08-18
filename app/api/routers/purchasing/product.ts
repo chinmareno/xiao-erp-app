@@ -2,6 +2,7 @@ import { ItemCategory } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, purchasingProcedure } from "~/api/trpc.server";
+import { normalizeString } from "../../../lib/normalizeString";
 
 export const createProductSchema = z.object({
   supplierId: z.string().min(1, "Supplier is required"),
@@ -55,13 +56,48 @@ export const productRouter = createTRPCRouter({
           },
         });
       } else if (itemName) {
-        await ctx.db.item.create({
-          data: {
-            name: itemName,
-            category: itemCategory,
-            supplierProducts: { create: { supplierId, price, priceCurrency } },
-          },
+        const companyItems = await ctx.db.item.findMany({
+          where: { companyId: ctx.companyId },
         });
+        const sameItemName = companyItems.find(
+          (item) => normalizeString(item.name) === normalizeString(itemName)
+        );
+
+        if (sameItemName) {
+          const alreadyAdded = await ctx.db.item.findFirst({
+            where: {
+              id: sameItemName.id,
+              supplierProducts: { some: { supplierId } },
+            },
+          });
+          if (alreadyAdded) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message:
+                "This supplier already has a product for the selected item.",
+            });
+          } else {
+            await ctx.db.item.update({
+              where: { id: sameItemName.id },
+              data: {
+                supplierProducts: {
+                  create: { price, priceCurrency, supplierId },
+                },
+              },
+            });
+          }
+        } else {
+          await ctx.db.item.create({
+            data: {
+              name: itemName,
+              category: itemCategory,
+              companyId: ctx.companyId,
+              supplierProducts: {
+                create: { supplierId, price, priceCurrency },
+              },
+            },
+          });
+        }
       }
     }),
 
@@ -109,7 +145,10 @@ export const productRouter = createTRPCRouter({
             data: { itemId },
           }),
         ]);
-      } else if (itemName?.trim() === oldSupplierProduct.item.name) {
+      } else if (
+        normalizeString(itemName || "") ===
+        normalizeString(oldSupplierProduct.item.name)
+      ) {
         await ctx.db.$transaction([
           ctx.db.item.updateMany({
             where: { name: itemName?.trim() },
@@ -121,11 +160,25 @@ export const productRouter = createTRPCRouter({
           }),
         ]);
       } else if (itemName) {
+        const supplierItems = await ctx.db.item.findMany({
+          where: { supplierProducts: { some: { supplierId } } },
+        });
+        const sameItemName = supplierItems.find(
+          (item) => normalizeString(item.name) === normalizeString(itemName)
+        );
+        if (sameItemName) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "This supplier already has a product for the selected item.",
+          });
+        }
         await ctx.db.$transaction([
           ctx.db.item.create({
             data: {
               name: itemName,
               category: itemCategory,
+              companyId: ctx.companyId,
               supplierProducts: {
                 create: { supplierId, price, priceCurrency },
               },

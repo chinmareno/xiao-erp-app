@@ -26,6 +26,7 @@ import { createCallerWithContext } from "~/api/root.server";
 import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { TRPCError } from "@trpc/server";
 import { toast } from "sonner";
+import { ItemCategory } from "@prisma/client";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -57,8 +58,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     itemCategory,
   } = result.data;
 
-  if (itemId) {
-    try {
+  try {
+    if (itemId) {
       await caller.purchasing.product.createProduct({
         itemId,
         supplierId,
@@ -67,29 +68,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
         priceCurrency,
         itemCategory,
       });
-    } catch (error) {
-      if (error instanceof TRPCError) {
-        if (
-          error.message ===
-          "This supplier already has a product for the selected item."
-        ) {
-          return { errors: "This supplier already has this product" };
-        }
-      } else {
-        throw error;
-      }
+    } else if (itemName) {
+      await caller.purchasing.product.createProduct({
+        supplierId,
+        itemName,
+        price,
+        itemImage,
+        priceCurrency,
+        itemCategory,
+      });
     }
-  } else if (itemName) {
-    await caller.purchasing.product.createProduct({
-      supplierId,
-      itemName,
-      price,
-      itemImage,
-      priceCurrency,
-      itemCategory,
-    });
+  } catch (error) {
+    if (error instanceof TRPCError) {
+      if (
+        error.message ===
+        "This supplier already has a product for the selected item."
+      ) {
+        return { errors: "This supplier already has this product" };
+      }
+    } else {
+      throw error;
+    }
   }
   return redirect(`/${companyId}/purchasing/supplier/${supplierId}`);
+}
+
+enum ItemCategoryEnum {
+  RAW_MATERIAL = "RAW_MATERIAL",
+  SUPPORTING_MATERIAL = "SUPPORTING_MATERIAL",
+  FINISHED_GOODS = "FINISHED_GOODS",
 }
 
 export default function ProductCreate() {
@@ -98,6 +105,7 @@ export default function ProductCreate() {
   const loaderData = useLoaderData<typeof loader>();
   const [priceCurrency, setPriceCurrency] = useState("IDR");
   const [addNewItem, setAddNewItem] = useState(false);
+  const [itemCategory, setItemCategory] = useState<ItemCategory | "">("");
   const [price, setPrice] = useState("");
 
   const params = useParams();
@@ -130,7 +138,16 @@ export default function ProductCreate() {
           {!addNewItem ? (
             <>
               <div className="flex gap-2">
-                <Select name="itemId" required>
+                <Select
+                  onValueChange={(val) => {
+                    const itemCategory = loaderData.products.find(
+                      (product) => product.id === val
+                    );
+                    setItemCategory(itemCategory?.category ?? "");
+                  }}
+                  name="itemId"
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select item" />
                   </SelectTrigger>
@@ -145,7 +162,11 @@ export default function ProductCreate() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setAddNewItem(true)}
+                  onClick={() => {
+                    setAddNewItem(true);
+                    setPrice("");
+                    setItemCategory("");
+                  }}
                 >
                   Add New
                 </Button>
@@ -157,12 +178,45 @@ export default function ProductCreate() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setAddNewItem(false)}
+                onClick={() => {
+                  setAddNewItem(false);
+                  setPrice("");
+                  setItemCategory("");
+                }}
               >
                 Cancel
               </Button>
             </div>
           )}
+        </div>
+        <div>
+          <Label>Item Category</Label>
+          <input
+            type="hidden"
+            name="itemCategory"
+            value={itemCategory || undefined}
+          />
+          <Select
+            value={itemCategory || undefined}
+            onValueChange={(val) => setItemCategory(val as ItemCategory)}
+            required
+            disabled={!addNewItem}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ItemCategoryEnum.RAW_MATERIAL}>
+                Raw Material
+              </SelectItem>
+              <SelectItem value={ItemCategoryEnum.SUPPORTING_MATERIAL}>
+                Supporting Material
+              </SelectItem>
+              <SelectItem value={ItemCategoryEnum.FINISHED_GOODS}>
+                Finished Goods
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label>
