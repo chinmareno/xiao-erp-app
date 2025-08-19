@@ -59,7 +59,6 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 });
 
 export const purchasingProcedure = t.procedure.use(async ({ ctx, next }) => {
-
   if (!ctx.session || !ctx.companyId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -89,6 +88,51 @@ export const purchasingProcedure = t.procedure.use(async ({ ctx, next }) => {
       },
     });
   } else if (!isMember || !isMember.permissions.includes("PURCHASING")) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not a member of this company",
+    });
+  }
+
+  return next({
+    ctx: {
+      session: ctx.session,
+      role: ctx.role,
+      companyId: ctx.companyId,
+    },
+  });
+});
+
+export const inventoryProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.session || !ctx.companyId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You are not authorized",
+    });
+  }
+
+  const isMember = await ctx.db.companyMember.findUnique({
+    where: {
+      userId_companyId: {
+        userId: ctx.session.user.id,
+        companyId: ctx.companyId,
+      },
+    },
+    select: { permissions: true, role: true },
+  });
+
+  const isSuperAdmin = ctx.role === "SUPERADMIN";
+  const isOwner = isMember?.role === "OWNER";
+
+  if ((isMember && isSuperAdmin) || (isMember && isOwner)) {
+    return next({
+      ctx: {
+        session: ctx.session,
+        role: ctx.role,
+        companyId: ctx.companyId,
+      },
+    });
+  } else if (!isMember || !isMember.permissions.includes("INVENTORY")) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You are not a member of this company",

@@ -128,7 +128,6 @@ export default function SupplierDetail() {
               </div>
             </RadioGroup>
             <Button
-              variant="default"
               className="mb-4 ml-auto self-end inline-flex items-center gap-2 rounded-md bg-blue-600 py-0 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
               onClick={() => {
                 setSelectedSupplierPO(params.supplierId as string);
