@@ -29,7 +29,7 @@ export function CreateWarehouseDialog({
         <Form method="post" className="space-y-4">
           <div>
             <Label htmlFor="name" className="block text-sm font-medium mb-1">
-              Name
+              Name<span className="text-red-600">*</span>
             </Label>
             <Input
               id="name"

@@ -29,7 +29,9 @@ export function DataTable<TData extends { id: string }, TValue>({
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
   const navigate = useNavigate();
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -55,8 +57,8 @@ export function DataTable<TData extends { id: string }, TValue>({
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
-                key={row.id}
                 onClick={() => navigate(row.original.id)}
+                key={row.id}
                 className="cursor-pointer hover:bg-gray-100"
                 data-state={row.getIsSelected() && "selected"}
               >

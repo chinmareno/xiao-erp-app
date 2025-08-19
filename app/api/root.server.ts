@@ -1,7 +1,7 @@
 import { appRouter } from "./routers/index.server";
 import { createCallerFactory, createTRPCContext } from "./trpc.server";
 
-const createCaller = createCallerFactory(appRouter);
+export const createCaller = createCallerFactory(appRouter);
 
 export const createCallerWithContext = async (
   req: Request,

@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, purchasingProcedure } from "~/api/trpc.server";
 import { normalizeString } from "../../../lib/normalizeString";
+import { eventBus } from "~/events";
 
 export const createProductSchema = z.object({
   supplierId: z.string().min(1, "Supplier is required"),
@@ -87,7 +88,7 @@ export const productRouter = createTRPCRouter({
             });
           }
         } else {
-          await ctx.db.item.create({
+          const newItem = await ctx.db.item.create({
             data: {
               name: itemName,
               category: itemCategory,
@@ -96,6 +97,12 @@ export const productRouter = createTRPCRouter({
                 create: { supplierId, price, priceCurrency },
               },
             },
+            select: { supplierProducts: { select: { id: true } } },
+          });
+
+          eventBus.emit("item:created", {
+            supplierProductId: newItem.supplierProducts[0].id,
+            companyId: ctx.companyId,
           });
         }
       }
@@ -231,65 +238,61 @@ export const productRouter = createTRPCRouter({
     }),
 
   getProductsByCompanyId: purchasingProcedure.query(async ({ ctx }) => {
-    const supplierIds = await ctx.db.supplier.findMany({
-      where: { companyId: ctx.companyId },
-      select: { id: true },
-    });
-
-    const supplierIdList = supplierIds.map((s) => s.id);
-
     const supplierProducts = await ctx.db.supplierProduct.findMany({
       where: {
-        supplierId: { in: supplierIdList },
+        supplier: {
+          companyId: ctx.companyId,
+        },
       },
       select: {
         price: true,
         priceCurrency: true,
         itemId: true,
-        item: true,
         supplierId: true,
+        item: {
+          select: {
+            name: true,
+            category: true,
+          },
+        },
       },
     });
 
-    const grouped = supplierProducts.reduce(
-      (acc, sp) => {
-        const key = sp.itemId;
+    const grouped = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        category: ItemCategory;
+        supplierIds: Set<string>;
+        IDR: number[];
+        YUAN: number[];
+      }
+    >();
 
-        if (!acc[key]) {
-          acc[key] = {
-            id: sp.itemId,
-            name: sp.item.name,
-            category: sp.item.category,
-            supplierIds: new Set<string>(),
-            IDR: [] as number[],
-            YUAN: [] as number[],
-          };
-        }
+    for (const sp of supplierProducts) {
+      if (!grouped.has(sp.itemId)) {
+        grouped.set(sp.itemId, {
+          id: sp.itemId,
+          name: sp.item.name,
+          category: sp.item.category,
+          supplierIds: new Set<string>(),
+          IDR: [],
+          YUAN: [],
+        });
+      }
 
-        acc[key].supplierIds.add(sp.supplierId);
+      const group = grouped.get(sp.itemId)!;
+      group.supplierIds.add(sp.supplierId);
 
-        if (sp.priceCurrency === "IDR") {
-          acc[key].IDR.push(Number(sp.price));
-        } else if (sp.priceCurrency === "YUAN") {
-          acc[key].YUAN.push(Number(sp.price));
-        }
+      if (sp.priceCurrency === "IDR") {
+        group.IDR.push(Number(sp.price));
+      } else if (sp.priceCurrency === "YUAN") {
+        group.YUAN.push(Number(sp.price));
+      }
+    }
 
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          id: string;
-          name: string;
-          supplierIds: Set<string>;
-          category: ItemCategory;
-          IDR: number[];
-          YUAN: number[];
-        }
-      >
-    );
-
-    const result = Object.values(grouped).map((group) => {
+    const result = Array.from(grouped.values()).map((group) => {
       const formatRange = (
         prices: number[],
         symbol: string,
