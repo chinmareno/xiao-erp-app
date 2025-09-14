@@ -1,6 +1,6 @@
 import { ActionFunctionArgs, redirect } from "@remix-run/node";
 import { z } from "zod";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 
 const editPOSchema = z.object({
   companyId: z.string().min(1),

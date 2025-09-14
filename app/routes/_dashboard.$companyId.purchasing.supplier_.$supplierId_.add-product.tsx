@@ -21,12 +21,12 @@ import {
   redirect,
 } from "@remix-run/node";
 import { formDataParser } from "~/lib/formDataParser";
-import { createProductSchema } from "~/api/routers/purchasing/product";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { TRPCError } from "@trpc/server";
 import { toast } from "sonner";
 import { ItemCategory } from "@prisma/client";
+import { createProductSchema } from "~/server/api/routers/purchasing/product";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;

@@ -4,7 +4,7 @@ import { columns as productColumns } from "./SupplierProductDataTable/columns";
 import { DataTable as ProductDataTable } from "./SupplierProductDataTable/data-table";
 import { columns as poColumns } from "./SupplierPODataTable/columns";
 import { DataTable as PODataTable } from "./SupplierPODataTable/data-table";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { Button } from "~/components/ui/button";
 import { useSupplierDetailStore } from "~/hooks/useSupplierDetailStore";
 import { usePOStatusFilterStore } from "~/hooks/usePOStatusFilterStore";

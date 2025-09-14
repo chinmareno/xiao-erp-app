@@ -1,9 +1,9 @@
 import { ItemCategory } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createTRPCRouter, purchasingProcedure } from "~/api/trpc.server";
-import { normalizeString } from "../../../lib/normalizeString";
+import { createTRPCRouter, purchasingProcedure } from "../../trpc.server";
 import { eventBus } from "~/events";
+import { normalizeString } from "~/lib/normalizeString";
 
 export const createProductSchema = z.object({
   supplierId: z.string().min(1, "Supplier is required"),

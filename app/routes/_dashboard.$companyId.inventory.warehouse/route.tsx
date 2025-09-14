@@ -3,7 +3,7 @@ import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import { Plus } from "lucide-react";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { z } from "zod";
 import { formDataParser } from "~/lib/formDataParser";
 import { CreateWarehouseDialog } from "./CreateWarehouseDialog";

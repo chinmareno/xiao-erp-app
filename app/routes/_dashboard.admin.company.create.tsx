@@ -6,19 +6,11 @@ import {
 import { useActionData, Form, useLoaderData } from "@remix-run/react";
 import { auth } from "~/lib/auth/auth.server";
 import { formDataParser } from "~/lib/formDataParser";
-import { createCallerWithContext } from "~/api/root.server";
-import { z } from "zod";
+import { createCallerWithContext } from "~/server/api/root.server";
 import InputWithLabel from "~/components/InputWithLabel";
 import { useEffect, useRef } from "react";
-
-const createCompanySchema = z.object({
-  name: z.string().min(1, "Company name is required"),
-  address: z.string().min(1, "Address is required"),
-  industry: z.string().min(1, "Industry is required"),
-  desc: z.string().optional(),
-});
-
-type CreateCompanyForm = z.infer<typeof createCompanySchema>;
+import { toast } from "sonner";
+import { createCompanySchema } from "~/schemas/company";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -30,14 +22,27 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export async function action({ request }: ActionFunctionArgs) {
   const caller = await createCallerWithContext(request);
-  const data = (await formDataParser(request)) as CreateCompanyForm;
+  const data = await formDataParser(request);
 
   const result = await createCompanySchema.safeParseAsync(data);
 
-  if (result.error) return result.error.format();
+  if (result.error) {
+    const errors = result.error.format();
+    const formattedError = {
+      name: errors.name?._errors[0],
+      address: errors.address?._errors[0],
+      industry: errors.industry?._errors[0],
+      desc: errors.desc?._errors[0],
+    };
+    return { fieldErrors: formattedError };
+  }
 
-  await caller.company.create(data);
-  return null;
+  try {
+    await caller.company.create(result.data);
+    return null;
+  } catch (error) {
+    return { error: "Failed to create company. Please try again." };
+  }
 }
 
 export default function CompanyCreate() {
@@ -50,6 +55,9 @@ export default function CompanyCreate() {
     if (actionData === null) {
       formRef.current?.reset();
     }
+    if (actionData?.error) {
+      toast.info(actionData.error);
+    }
   }, [actionData, loaderData]);
 
   return (
@@ -60,24 +68,24 @@ export default function CompanyCreate() {
           id="name"
           label="Company Name"
           required
-          error={actionData?.name?._errors[0]}
+          error={actionData?.fieldErrors?.name}
         />
         <InputWithLabel
           id="address"
           label="Address"
           required
-          error={actionData?.address?._errors[0]}
+          error={actionData?.fieldErrors?.address}
         />
         <InputWithLabel
           id="industry"
           label="Industry"
           required
-          error={actionData?.industry?._errors[0]}
+          error={actionData?.fieldErrors?.industry}
         />
         <InputWithLabel
           id="desc"
           label="Description"
-          error={actionData?.desc?._errors[0]}
+          error={actionData?.fieldErrors?.desc}
         />
 
         <button

@@ -2,7 +2,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { z } from "zod";
 import { formDataParser } from "~/lib/formDataParser";
 

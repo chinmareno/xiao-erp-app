@@ -7,11 +7,11 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { createCallerWithContext } from "~/api/root.server";
 import { formDataParser } from "~/lib/formDataParser";
 import { z } from "zod";
 import { useEffect, useState } from "react";
 import { CompanyIdLoader } from "./_dashboard.$companyId";
+import { createCallerWithContext } from "~/server/api/root.server";
 
 const InviteMemberSchema = z.object({
   companyId: z.string().min(1, "Company ID is required"),
@@ -22,7 +22,7 @@ type InviteMember = z.infer<typeof InviteMemberSchema>;
 export async function action({ request, params }: ActionFunctionArgs) {
   const caller = await createCallerWithContext(request, params.companyId);
   const { companyId } = (await formDataParser(request)) as InviteMember;
-  return await caller.inviteLink.create({ companyId });
+  return await caller.company.createInviteLink({ companyId });
 }
 
 export default function DashboardIndex() {

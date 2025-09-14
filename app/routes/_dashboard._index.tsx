@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const caller = await createCallerWithContext(request);

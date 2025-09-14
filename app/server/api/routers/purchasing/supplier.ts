@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, purchasingProcedure } from "~/api/trpc.server";
+import { createTRPCRouter, purchasingProcedure } from "../../trpc.server";
 
 const npwpRegex = /^\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}$/;
 

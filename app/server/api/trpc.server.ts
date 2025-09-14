@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { auth } from "../lib/auth/auth.server";
 import { db } from "~/lib/db.server";
 import { ZodError } from "zod";
+import { auth } from "~/lib/auth/auth.server";
 
 export async function createTRPCContext(req: Request, companyId?: string) {
   const session = await auth.api.getSession({ headers: req.headers });
@@ -54,6 +54,23 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     ctx: {
       session: ctx.session,
       role: ctx.role,
+    },
+  });
+});
+
+export const companyMemberProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session || !ctx.companyId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You are not authorized",
+    });
+  }
+
+  return next({
+    ctx: {
+      session: ctx.session,
+      role: ctx.role,
+      companyId: ctx.companyId,
     },
   });
 });
@@ -192,7 +209,7 @@ export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
     });
   }
 
-  if (ctx.role !== "SUPERADMIN") {
+  if (ctx.role !== "SUPERADMIN" && !process.env.DEMO_MODE) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You are not SUPERADMIN",

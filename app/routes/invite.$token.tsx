@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { TRPCError } from "@trpc/server";
 import { auth } from "~/lib/auth/auth.server";
 import { useEffect } from "react";

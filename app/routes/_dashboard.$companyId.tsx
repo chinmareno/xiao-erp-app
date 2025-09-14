@@ -1,7 +1,7 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
 
 export type CompanyIdLoader = typeof loader;

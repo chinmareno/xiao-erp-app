@@ -24,7 +24,7 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 
-import defaultAvatar from "../../../../src/default_profile.png";
+import defaultAvatar from "../../../public/default_profile.png";
 import { authClient } from "~/lib/auth/auth-client";
 import { useRouteLoaderData } from "@remix-run/react";
 import { DashboardLoader } from "../route";
@@ -54,14 +54,11 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                {loaderData?.user?.image ? (
-                  <AvatarImage
-                    src={loaderData?.user?.image}
-                    alt={loaderData?.user?.name}
-                  />
-                ) : (
-                  <img src={defaultAvatar} alt={"default avatar"} />
-                )}
+                <AvatarImage
+                  referrerPolicy="no-referrer"
+                  src={loaderData?.user.image ?? defaultAvatar}
+                  alt={loaderData?.user.name ?? "avatar"}
+                />
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
@@ -83,14 +80,11 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  {loaderData?.user?.image ? (
-                    <AvatarImage
-                      src={loaderData?.user?.image}
-                      alt={loaderData?.user?.name}
-                    />
-                  ) : (
-                    <img src={defaultAvatar} alt={"default avatar"} />
-                  )}
+                  <AvatarImage
+                    referrerPolicy="no-referrer"
+                    src={loaderData?.user.image ?? defaultAvatar}
+                    alt={loaderData?.user.name ?? "avatar"}
+                  />
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">

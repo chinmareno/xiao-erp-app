@@ -20,13 +20,13 @@ import {
 import { auth } from "~/lib/auth/auth.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { SideNavbar } from "./SideNavbar";
-import { createCallerWithContext } from "~/api/root.server";
-import { createTRPCContext } from "~/api/trpc.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useInviteLinkTokenStore } from "~/hooks/useInviteLinkTokenStore";
 import { Company, User } from "@prisma/client";
 import { useOpenDialogNavbarStore } from "~/hooks/useOpenDialogNavbarStore";
+import { createTRPCContext } from "~/server/api/trpc.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await auth.api.getSession({

@@ -3,7 +3,7 @@ import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Plus } from "lucide-react";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;

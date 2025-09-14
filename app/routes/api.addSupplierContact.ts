@@ -1,7 +1,7 @@
 import { ActionFunctionArgs } from "@remix-run/node";
 import { ClientActionFunctionArgs } from "@remix-run/react";
 import { z } from "zod";
-import { createCallerWithContext } from "~/api/root.server";
+import { createCallerWithContext } from "~/server/api/root.server";
 import { formDataParser } from "~/lib/formDataParser";
 
 const contactFormSchema = z
