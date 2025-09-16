@@ -1,4 +1,6 @@
-import { CompanyRole, PrismaClient } from "@prisma/client";
+import { CompanyRole } from "@prisma/client";
+import { repositoryErrorLogger } from "~/lib/logger/repositoryErrorLogger";
+import { DBClientType } from "~/types/DBClientType";
 
 type getCompanyMemberByUserIdAndCompanyIdType = {
   userId: string;
@@ -12,7 +14,7 @@ type CreateCompanyMemberType = {
 };
 
 export const getCompanyMemberByUserIdAndCompanyId = async (
-  db: PrismaClient,
+  db: DBClientType,
   { userId, companyId }: getCompanyMemberByUserIdAndCompanyIdType
 ) => {
   try {
@@ -27,16 +29,16 @@ export const getCompanyMemberByUserIdAndCompanyId = async (
 
     return companyMember;
   } catch (error) {
-    console.error(
-      "Repository Error getCompanyMemberByUserIdAndCompanyId: ",
-      error
-    );
+    repositoryErrorLogger({
+      method: "getCompanyMemberByUserIdAndCompanyId",
+      error,
+    });
     throw error;
   }
 };
 
 export const createCompanyMember = async (
-  db: PrismaClient,
+  db: DBClientType,
   { userId, companyId, role }: CreateCompanyMemberType
 ) => {
   try {
@@ -48,7 +50,7 @@ export const createCompanyMember = async (
       },
     });
   } catch (error) {
-    console.error("Repository Error createCompanyMember: ", error);
+    repositoryErrorLogger({ method: "createCompanyMember", error });
     throw error;
   }
 };

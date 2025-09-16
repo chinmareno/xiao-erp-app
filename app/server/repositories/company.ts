@@ -1,6 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { repositoryErrorLogger } from "~/lib/logger/repositoryErrorLogger";
+import { DBClientType } from "~/types/DBClientType";
 
-type createCompanyType = {
+type CreateCompanyType = {
   name: string;
   address: string;
   industry: string;
@@ -9,11 +10,11 @@ type createCompanyType = {
 };
 
 export const createCompany = async (
-  db: PrismaClient,
-  { name, address, industry, desc, userId }: createCompanyType
+  db: DBClientType,
+  { name, address, industry, desc, userId }: CreateCompanyType
 ) => {
   try {
-    const { id: companyId } = await db.company.create({
+    const company = await db.company.create({
       data: {
         name,
         address,
@@ -27,27 +28,27 @@ export const createCompany = async (
         },
         poNumberFormat: { create: { prefix: "PO" } },
       },
-      select: { id: true },
     });
 
-    return companyId;
+    return company;
   } catch (error) {
-    throw new Error("Repository Error createCompany: ", { cause: error });
+    repositoryErrorLogger({ method: "createCompany", error });
+    throw error;
   }
 };
 
-export const getAllCompanies = async (db: PrismaClient) => {
+export const getAllCompanies = async (db: DBClientType) => {
   try {
     const companies = await db.company.findMany();
 
     return companies;
   } catch (error) {
-    console.error("Repository Error getAllCompanies: ", error);
+    repositoryErrorLogger({ method: "getAllCompanies", error });
     throw error;
   }
 };
 export const getCompaniesByUserId = async (
-  db: PrismaClient,
+  db: DBClientType,
   userId: string
 ) => {
   try {
@@ -63,12 +64,12 @@ export const getCompaniesByUserId = async (
 
     return companies;
   } catch (error) {
-    console.error("Repository Error getCompaniesByUserId: ", error);
+    repositoryErrorLogger({ method: "getCompaniesByUserId", error });
     throw error;
   }
 };
 
-export const getCompanyById = async (db: PrismaClient, companyId: string) => {
+export const getCompanyById = async (db: DBClientType, companyId: string) => {
   try {
     const companies = await db.company.findUnique({
       where: {
@@ -78,7 +79,7 @@ export const getCompanyById = async (db: PrismaClient, companyId: string) => {
 
     return companies;
   } catch (error) {
-    console.error("Repository Error getCompanyById: ", error);
+    repositoryErrorLogger({ method: "getCompanyById", error });
     throw error;
   }
 };

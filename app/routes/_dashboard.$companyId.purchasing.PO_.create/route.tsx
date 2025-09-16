@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const products = await caller.purchasing.product.getProductsByCompanyId();
   const POFormat = await caller.purchasing.PO.getPONumberFormatByCompanyId();
   const latestPOCustomerContact =
-    await caller.purchasing.PO.getLatestPOCustomerContactByCompanyId();
+    await caller.purchasing.PO.getLastPOCustomerContactByCompanyId();
 
   return { suppliers, products, POFormat, latestPOCustomerContact };
 }

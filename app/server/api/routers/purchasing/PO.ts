@@ -1,6 +1,16 @@
 import { createPOSchema, editPOSchema } from "~/schemas/purchasing/PO";
 import { createTRPCRouter, purchasingProcedure } from "../../trpc.server";
 import { z } from "zod";
+import {
+  changePONumberFormatPrefix,
+  changePOStatusByPOId,
+  editPOByPOId,
+  findLastPOCustomerContactByCompanyId,
+  findPOByPOId,
+  findPONumberFormatByCompanyId,
+  findPOsByCompanyId,
+  makePO,
+} from "~/server/services/PO";
 
 export const PORouter = createTRPCRouter({
   createPO: purchasingProcedure
@@ -21,138 +31,35 @@ export const PORouter = createTRPCRouter({
         subTotal,
         grandTotal,
       } = input;
+      const companyId = ctx.companyId;
 
-      const idrYuanRate = await ctx.db.yuanIdrRate.findFirst();
-      if (!idrYuanRate) throw new Error("Yuan to IDR rate not found");
-
-      const { idrToYuanRate, yuanToIdrRate } = idrYuanRate;
-
-      const PONumberFormatData = await ctx.db.pONumberFormat.findFirst({
-        where: { companyId: ctx.companyId },
+      await makePO(ctx.db, {
+        customerContactEmail,
+        customerContactName,
+        customerContactPhone,
+        items,
+        priceCurrency,
+        supplierContactId,
+        supplierId,
+        discount,
+        tax,
+        discountTotal,
+        taxTotal,
+        subTotal,
+        grandTotal,
+        companyId,
       });
-      if (!PONumberFormatData) throw new Error("PO Number format not found");
-      const PONumber = `${
-        PONumberFormatData.prefix
-      }-${PONumberFormatData.currentNumber.toString().padStart(6, "0")}`;
-
-      const supplierDetail = await ctx.db.supplier.findUnique({
-        where: {
-          id: supplierId,
-        },
-      });
-      const supplierContactDetail = await ctx.db.contact.findUnique({
-        where: { id: supplierContactId },
-      });
-
-      const customerDetail = await ctx.db.company.findUnique({
-        where: { id: ctx.companyId },
-      });
-      if (!supplierDetail || !customerDetail || !supplierContactDetail)
-        throw new Error("Internal Server Error");
-
-      if (priceCurrency === "YUAN") {
-        const updatedItems = items.map((item) => ({
-          itemId: item.itemId,
-          quantity: item.quantity,
-          costYuan: item.itemCost,
-          costIdr: item.itemCost * yuanToIdrRate,
-          unit: item.unit,
-        }));
-
-        await ctx.db.$transaction([
-          ctx.db.pONumberFormat.update({
-            where: { companyId: ctx.companyId },
-            data: { currentNumber: PONumberFormatData.currentNumber + 1 },
-          }),
-          ctx.db.purchaseOrder.create({
-            data: {
-              PONumber,
-              discountTotal,
-              grandTotal,
-              subTotal,
-              taxTotal,
-              priceCurrency,
-              customerName: customerDetail.name,
-              supplierName: supplierDetail.name,
-              customerAddress: customerDetail.address,
-              customerContactName,
-              supplierAdress: supplierDetail.address,
-              supplierContactId,
-              supplierContactName: supplierContactDetail.name,
-              supplierContactPhone: supplierContactDetail.phone,
-              supplierContactEmail: supplierContactDetail.email,
-              customerContactEmail,
-              customerContactPhone,
-              supplierId,
-              tax: Number(tax),
-              discount: Number(discount),
-              companyId: ctx.companyId,
-              items: {
-                createMany: { data: updatedItems },
-              },
-            },
-          }),
-        ]);
-      } else if (priceCurrency === "IDR") {
-        const updatedItems = items.map((item) => ({
-          itemId: item.itemId,
-          quantity: item.quantity,
-          costIdr: item.itemCost,
-          costYuan: item.itemCost * idrToYuanRate,
-          unit: item.unit,
-        }));
-        await ctx.db.$transaction([
-          ctx.db.pONumberFormat.update({
-            where: { companyId: ctx.companyId },
-            data: { currentNumber: PONumberFormatData.currentNumber + 1 },
-          }),
-
-          ctx.db.purchaseOrder.create({
-            data: {
-              PONumber,
-              discountTotal,
-              grandTotal,
-              subTotal,
-              taxTotal,
-              priceCurrency,
-              customerName: customerDetail.name,
-              supplierName: supplierDetail.name,
-              customerAddress: customerDetail.address,
-              customerContactName,
-              supplierAdress: supplierDetail.address,
-              supplierContactId,
-              supplierContactName: supplierContactDetail.name,
-              supplierContactPhone: supplierContactDetail.phone,
-              supplierContactEmail: supplierContactDetail.email,
-              customerContactEmail,
-              customerContactPhone,
-              supplierId,
-              tax: Number(tax),
-              discount: Number(discount),
-              companyId: ctx.companyId,
-              items: {
-                createMany: { data: updatedItems },
-              },
-            },
-          }),
-        ]);
-      }
     }),
 
   getPONumberFormatByCompanyId: purchasingProcedure.query(async ({ ctx }) => {
-    const PONumberFormatData = await ctx.db.pONumberFormat.findFirst({
-      where: {
-        companyId: ctx.companyId,
-      },
-    });
-    if (!PONumberFormatData) throw Error("Not Found");
+    const companyId = ctx.companyId;
 
-    return {
-      PONumberPrefix: PONumberFormatData.prefix,
-      PONumberCurrentNumber: PONumberFormatData.currentNumber
-        .toString()
-        .padStart(6, "0"),
-    };
+    const { formattedPONumber } = await findPONumberFormatByCompanyId(
+      ctx.db,
+      companyId
+    );
+
+    return formattedPONumber;
   }),
 
   changePONumberFormat: purchasingProcedure
@@ -163,62 +70,35 @@ export const PORouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { prefix } = input;
+      const companyId = ctx.companyId;
 
-      const PONumberFormatData = await ctx.db.pONumberFormat.update({
-        where: { companyId: ctx.companyId },
-        data: { prefix },
+      const PONumberFormat = await changePONumberFormatPrefix(ctx.db, {
+        prefix,
+        companyId,
       });
 
-      return {
-        PONumberPrefix: PONumberFormatData.prefix,
-        PONumberCurrentNumber: PONumberFormatData.currentNumber
-          .toString()
-          .padStart(6, "0"),
-      };
+      return PONumberFormat;
     }),
 
-  getLatestPOCustomerContactByCompanyId: purchasingProcedure.query(
+  getLastPOCustomerContactByCompanyId: purchasingProcedure.query(
     async ({ ctx }) => {
-      const result = await ctx.db.purchaseOrder.findFirst({
-        where: { companyId: ctx.companyId },
-        select: {
-          customerContactName: true,
-          customerContactEmail: true,
-          customerContactPhone: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
+      const companyId = ctx.companyId;
 
-      return result;
+      const lastPOCustomerContact = await findLastPOCustomerContactByCompanyId(
+        ctx.db,
+        companyId
+      );
+
+      return lastPOCustomerContact;
     }
   ),
 
   getPOsByCompanyId: purchasingProcedure.query(async ({ ctx }) => {
-    const POs = await ctx.db.purchaseOrder.findMany({
-      where: { companyId: ctx.companyId },
-      include: { supplier: { select: { taxId: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+    const companyId = ctx.companyId;
 
-    const poIds = POs.map((po) => po.id);
+    const POs = await findPOsByCompanyId(ctx.db, companyId);
 
-    const poItemCounts = await ctx.db.purchaseOrderItem.groupBy({
-      by: ["purchaseOrderId"],
-      _count: { purchaseOrderId: true },
-      where: { purchaseOrderId: { in: poIds } },
-    });
-
-    const poItemsCountsObj = Object.fromEntries(
-      poItemCounts.map((po) => [po.purchaseOrderId, po._count.purchaseOrderId])
-    );
-
-    const flatPOs = POs.map(({ supplier, ...rest }) => ({
-      ...rest,
-      supplierTaxId: supplier?.taxId ?? null,
-      totalItemTypes: poItemsCountsObj[rest.id] ?? 0,
-    }));
-
-    return flatPOs;
+    return POs;
   }),
 
   getPOByPOId: purchasingProcedure
@@ -228,18 +108,10 @@ export const PORouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { id } = input;
+      const { id: poId } = input;
+      const companyId = ctx.companyId;
 
-      const PO = await ctx.db.purchaseOrder.findUnique({
-        where: { id, companyId: ctx.companyId },
-        include: {
-          items: { include: { item: true } },
-        },
-      });
-
-      if (!PO) {
-        throw new Error("Purchase Order not found");
-      }
+      const PO = findPOByPOId(ctx.db, { poId, companyId });
 
       return PO;
     }),
@@ -252,12 +124,9 @@ export const PORouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { POId, status } = input;
+      const { POId: poId, status } = input;
 
-      await ctx.db.purchaseOrder.update({
-        where: { id: POId, companyId: ctx.companyId },
-        data: { status },
-      });
+      await changePOStatusByPOId(ctx.db, { poId, status });
     }),
 
   editPOByPOId: purchasingProcedure
@@ -279,74 +148,24 @@ export const PORouter = createTRPCRouter({
         grandTotal,
         POId,
       } = input;
+      const companyId = ctx.companyId;
 
-      const idrYuanRate = await ctx.db.yuanIdrRate.findFirst();
-      if (!idrYuanRate) throw new Error("Yuan to IDR rate not found");
-
-      const { idrToYuanRate, yuanToIdrRate } = idrYuanRate;
-
-      const supplierDetail = await ctx.db.supplier.findUnique({
-        where: { id: supplierId },
-      });
-      const supplierContactDetail = await ctx.db.contact.findUnique({
-        where: { id: supplierContactId },
-      });
-      const customerDetail = await ctx.db.company.findUnique({
-        where: { id: ctx.companyId },
-      });
-
-      if (!supplierDetail || !customerDetail || !supplierContactDetail) {
-        throw new Error("Internal Server Error");
-      }
-
-      let updatedItems;
-      if (priceCurrency === "YUAN") {
-        updatedItems = items.map((item) => ({
-          itemId: item.itemId,
-          quantity: item.quantity,
-          costYuan: item.itemCost,
-          costIdr: item.itemCost * yuanToIdrRate,
-          unit: item.unit,
-        }));
-      } else {
-        updatedItems = items.map((item) => ({
-          itemId: item.itemId,
-          quantity: item.quantity,
-          costIdr: item.itemCost,
-          costYuan: item.itemCost * idrToYuanRate,
-          unit: item.unit,
-        }));
-      }
-
-      await ctx.db.purchaseOrder.update({
-        where: { id: POId },
-        data: {
-          discountTotal,
-          grandTotal,
-          subTotal,
-          taxTotal,
-          priceCurrency,
-          customerName: customerDetail.name,
-          supplierName: supplierDetail.name,
-          customerAddress: customerDetail.address,
-          customerContactName,
-          supplierAdress: supplierDetail.address,
-          supplierContactId,
-          supplierContactName: supplierContactDetail.name,
-          supplierContactPhone: supplierContactDetail.phone,
-          supplierContactEmail: supplierContactDetail.email,
-          customerContactEmail,
-          customerContactPhone,
-          supplierId,
-          tax: Number(tax),
-          discount: Number(discount),
-          companyId: ctx.companyId,
-
-          items: {
-            deleteMany: {},
-            createMany: { data: updatedItems },
-          },
-        },
+      await editPOByPOId(ctx.db, {
+        customerContactEmail,
+        customerContactName,
+        customerContactPhone,
+        items,
+        priceCurrency,
+        supplierContactId,
+        supplierId,
+        discount,
+        tax,
+        discountTotal,
+        taxTotal,
+        subTotal,
+        grandTotal,
+        POId,
+        companyId,
       });
     }),
 });

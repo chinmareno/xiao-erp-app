@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { repositoryErrorLogger } from "~/lib/logger/repositoryErrorLogger";
+import { DBClientType } from "~/types/DBClientType";
 
 type createInviteLinkType = {
   token: string;
@@ -6,7 +7,7 @@ type createInviteLinkType = {
   expiresAt: Date;
 };
 
-export const getInviteLinkByToken = async (db: PrismaClient, token: string) => {
+export const getInviteLinkByToken = async (db: DBClientType, token: string) => {
   try {
     const inviteLink = await db.inviteLink.findUnique({
       where: { token },
@@ -14,13 +15,13 @@ export const getInviteLinkByToken = async (db: PrismaClient, token: string) => {
 
     return inviteLink;
   } catch (error) {
-    console.error("Repository Error getInviteLinkByToken: ", error);
+    repositoryErrorLogger({ method: "getInviteLinkByToken", error });
     throw error;
   }
 };
 
 export const deleteInviteLinkByToken = async (
-  db: PrismaClient,
+  db: DBClientType,
   token: string
 ) => {
   try {
@@ -28,13 +29,13 @@ export const deleteInviteLinkByToken = async (
       where: { token },
     });
   } catch (error) {
-    console.error("Repository Error deleteInviteLinkByToken: ", error);
+    repositoryErrorLogger({ method: "deleteInviteLinkByToken", error });
     throw error;
   }
 };
 
 export const createInviteLink = async (
-  db: PrismaClient,
+  db: DBClientType,
   { token, companyId, expiresAt }: createInviteLinkType
 ) => {
   try {
@@ -48,7 +49,7 @@ export const createInviteLink = async (
 
     return inviteLink;
   } catch (error) {
-    console.error("Repository Error createInviteLink: ", error);
+    repositoryErrorLogger({ method: "createInviteLink", error });
     throw error;
   }
 };

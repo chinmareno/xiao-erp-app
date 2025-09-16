@@ -9,6 +9,7 @@ import {
   deleteInviteLinkByToken,
   getInviteLinkByToken,
 } from "../repositories/inviteLink";
+import { serviceErrorLogger } from "~/lib/logger/serviceErrorLogger";
 
 type joinCompanyByCompanyIdType = {
   userId: string;
@@ -99,9 +100,11 @@ export const findCompanyMemberByUserIdAndCompanyId = async (
     companyId,
   });
   if (!memberInfo) {
-    console.warn(
-      "Service Error findCompanyMemberByUserIdAndCompanyId: memberInfo not found but user can pass the tRPC middleware"
-    );
+    serviceErrorLogger({
+      method: "findCompanyMemberByUserIdAndCompanyId",
+      error: "memberInfo not found but user can pass the tRPC middleware",
+      logType: "warn",
+    });
     throw new TRPCError({
       code: "NOT_FOUND",
       message: "Member not found in this company " + userId,
