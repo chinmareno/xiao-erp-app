@@ -1,6 +1,6 @@
 type RepositoryErrorLoggerType = {
   method: string;
-  error: any;
+  error: unknown;
   logType?: "warn" | "error";
 };
 

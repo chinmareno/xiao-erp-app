@@ -21,7 +21,7 @@ import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { TRPCError } from "@trpc/server";
 import { toast } from "sonner";
 import { ItemCategory } from "@prisma/client";
-import { createProductSchema } from "~/server/api/routers/purchasing/product";
+import { createProductSchema } from "~/schemas/purchasing/product";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -29,7 +29,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const caller = await createCallerWithContext(request, companyId);
 
   const suppliers = await caller.purchasing.supplier.getSuppliersByCompanyId();
-  const products = await caller.purchasing.product.getUniqueItemsByCompanyId();
+  const products =
+    await caller.purchasing.supplierProduct.getUniqueItemsByCompanyId();
   return { suppliers, products };
 }
 
@@ -55,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     if (itemId) {
-      await caller.purchasing.product.createProduct({
+      await caller.purchasing.supplierProduct.createSupplierProduct({
         itemId,
         supplierId,
         price,
@@ -64,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         itemCategory,
       });
     } else if (itemName) {
-      await caller.purchasing.product.createProduct({
+      await caller.purchasing.supplierProduct.createSupplierProduct({
         supplierId,
         itemName,
         price,

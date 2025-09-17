@@ -2,26 +2,13 @@ import { ItemCategory } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, purchasingProcedure } from "../../trpc.server";
-import { eventBus } from "~/events";
 import { normalizeString } from "~/lib/normalizeString";
+import { createSupplierProductSchema } from "~/schemas/purchasing/product";
+import { addSupplierProduct } from "~/server/services/supplierProduct";
 
-export const createProductSchema = z.object({
-  supplierId: z.string().min(1, "Supplier is required"),
-  itemId: z.string().min(1, "Item id is required").optional(),
-  itemName: z.string().min(1, "Item name is required").optional(),
-  itemImage: z.string().nullable().optional(),
-  itemCategory: z.nativeEnum(ItemCategory),
-  price: z.string().min(1, "Price must be a positive number"),
-  priceCurrency: z.string().min(1, "Price currency is required"),
-});
-
-const getProductsBySupplierIdSchema = z.object({
-  supplierId: z.string().min(1, "Supplier is required"),
-});
-
-export const productRouter = createTRPCRouter({
-  createProduct: purchasingProcedure
-    .input(createProductSchema)
+export const supplierProductRouter = createTRPCRouter({
+  createSupplierProduct: purchasingProcedure
+    .input(createSupplierProductSchema)
     .mutation(async ({ ctx, input }) => {
       const {
         supplierId,
@@ -31,81 +18,17 @@ export const productRouter = createTRPCRouter({
         priceCurrency,
         itemId,
       } = input;
+      const companyId = ctx.companyId;
 
-      if (itemId) {
-        const alreadyAdded = await ctx.db.item.findFirst({
-          where: { id: itemId, supplierProducts: { some: { supplierId } } },
-        });
-        if (alreadyAdded) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message:
-              "This supplier already has a product for the selected item.",
-          });
-        }
-
-        await ctx.db.item.update({
-          where: { id: itemId },
-          data: {
-            supplierProducts: {
-              create: {
-                price,
-                priceCurrency,
-                supplierId,
-              },
-            },
-          },
-        });
-      } else if (itemName) {
-        const companyItems = await ctx.db.item.findMany({
-          where: { companyId: ctx.companyId },
-        });
-        const sameItemName = companyItems.find(
-          (item) => normalizeString(item.name) === normalizeString(itemName)
-        );
-
-        if (sameItemName) {
-          const alreadyAdded = await ctx.db.item.findFirst({
-            where: {
-              id: sameItemName.id,
-              supplierProducts: { some: { supplierId } },
-            },
-          });
-          if (alreadyAdded) {
-            throw new TRPCError({
-              code: "CONFLICT",
-              message:
-                "This supplier already has a product for the selected item.",
-            });
-          } else {
-            await ctx.db.item.update({
-              where: { id: sameItemName.id },
-              data: {
-                supplierProducts: {
-                  create: { price, priceCurrency, supplierId },
-                },
-              },
-            });
-          }
-        } else {
-          const newItem = await ctx.db.item.create({
-            data: {
-              name: itemName,
-              category: itemCategory,
-              companyId: ctx.companyId,
-              supplierProducts: {
-                create: { supplierId, price, priceCurrency },
-              },
-            },
-            select: { supplierProducts: { select: { id: true } } },
-          });
-
-          eventBus.emit("item:created", {
-            supplierProductId: newItem.supplierProducts[0].id,
-            companyId: ctx.companyId,
-          });
-        }
-      }
+      await addSupplierProduct(ctx.db, {
+        supplierId,
+        itemName,
+        itemCategory,
+        price,
+        priceCurrency,
+        itemId,
+        companyId,
+      });
     }),
 
   editProduct: purchasingProcedure
@@ -207,7 +130,11 @@ export const productRouter = createTRPCRouter({
     }),
 
   getProductsBySupplierId: purchasingProcedure
-    .input(getProductsBySupplierIdSchema)
+    .input(
+      z.object({
+        supplierId: z.string().min(1, "Supplier is required"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { supplierId } = input;
 

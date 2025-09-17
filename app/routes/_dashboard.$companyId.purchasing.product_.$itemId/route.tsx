@@ -19,7 +19,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const caller = await createCallerWithContext(request, companyId);
 
   const supplierProducts =
-    await caller.purchasing.product.getSupplierProductByItemId({ itemId });
+    await caller.purchasing.supplierProduct.getSupplierProductByItemId({
+      itemId,
+    });
 
   return supplierProducts;
 }
@@ -38,7 +40,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const { price, priceCurrency, supplierId } = result.data;
   const caller = await createCallerWithContext(request, companyId);
 
-  await caller.purchasing.product.editPriceSupplierProductBySupplierIdAndItemId(
+  await caller.purchasing.supplierProduct.editPriceSupplierProductBySupplierIdAndItemId(
     { itemId, supplierId, price, priceCurrency }
   );
 

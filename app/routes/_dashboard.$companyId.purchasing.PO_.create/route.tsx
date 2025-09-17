@@ -29,7 +29,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const caller = await createCallerWithContext(request, companyId);
 
   const suppliers = await caller.purchasing.supplier.getSuppliersByCompanyId();
-  const products = await caller.purchasing.product.getProductsByCompanyId();
+  const products =
+    await caller.purchasing.supplierProduct.getProductsByCompanyId();
   const POFormat = await caller.purchasing.PO.getPONumberFormatByCompanyId();
   const latestPOCustomerContact =
     await caller.purchasing.PO.getLastPOCustomerContactByCompanyId();

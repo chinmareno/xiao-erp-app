@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       supplierId,
     });
   const suppliersProducts =
-    await caller.purchasing.product.getProductsByCompanyId();
+    await caller.purchasing.supplierProduct.getProductsByCompanyId();
 
   const existingItemIds = new Set(
     supplierProducts.products.map((p) => p.itemId)
@@ -79,7 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     if (itemId) {
-      await caller.purchasing.product.editProduct({
+      await caller.purchasing.supplierProduct.editProduct({
         price: normalizedPrice,
         priceCurrency,
         supplierId,
@@ -88,7 +88,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         itemCategory,
       });
     } else {
-      await caller.purchasing.product.editProduct({
+      await caller.purchasing.supplierProduct.editProduct({
         price: normalizedPrice,
         priceCurrency,
         supplierId,

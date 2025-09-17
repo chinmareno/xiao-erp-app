@@ -31,7 +31,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const caller = await createCallerWithContext(request, companyId);
 
   const suppliers = await caller.purchasing.supplier.getSuppliersByCompanyId();
-  const products = await caller.purchasing.product.getProductsByCompanyId();
+  const products =
+    await caller.purchasing.supplierProduct.getProductsByCompanyId();
 
   return { suppliers, products };
 }

@@ -25,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const caller = await createCallerWithContext(request, companyId);
 
-  await caller.purchasing.product.deleteSupplierProductById({
+  await caller.purchasing.supplierProduct.deleteSupplierProductById({
     supplierId,
     supplierProductId,
   });

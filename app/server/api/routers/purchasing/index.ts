@@ -1,10 +1,10 @@
 import { supplierRouter } from "./supplier";
-import { productRouter } from "./product";
 import { PORouter } from "./PO";
 import { createTRPCRouter } from "../../trpc.server";
+import { supplierProductRouter } from "./supplierProduct";
 
 export const purchasingRouter = createTRPCRouter({
   supplier: supplierRouter,
-  product: productRouter,
+  supplierProduct: supplierProductRouter,
   PO: PORouter,
 });

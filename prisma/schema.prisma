@@ -165,7 +165,6 @@ model InviteLink {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@index([token])
 }
 
 model Supplier {
@@ -186,7 +185,6 @@ model Supplier {
   products       SupplierProduct[]
   purchaseOrders PurchaseOrder[]
 
-  @@index([companyId])
 }
 
 enum ItemCategory {
@@ -220,7 +218,6 @@ model SupplierProduct {
   updatedAt          DateTime            @updatedAt
   stockItems         StockItem[]
 
-  @@index([ supplierId, itemId])
 }
 
 model Warehouse {
@@ -274,7 +271,6 @@ model PurchaseOrder {
   companyId        String
   company          Company            @relation(fields: [companyId ], references: [id], onDelete: Cascade)
   @@unique([companyId, PONumber])
-  @@index([supplierId])
   priceCurrency            String     @default("IDR")
   supplierName             String
   supplierContactName      String

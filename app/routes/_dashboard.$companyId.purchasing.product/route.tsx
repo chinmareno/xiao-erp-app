@@ -9,7 +9,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
 
   const caller = await createCallerWithContext(request, companyId);
-  const products = await caller.purchasing.product.getProductsByCompanyId();
+  const products =
+    await caller.purchasing.supplierProduct.getProductsByCompanyId();
 
   return products;
 }

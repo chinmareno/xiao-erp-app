@@ -4,8 +4,6 @@ import { createPOSchema, editPOSchema } from "~/schemas/purchasing/PO";
 import { TRPCError } from "@trpc/server";
 import { findYuanIdrRate } from "./yuanIdrRate";
 import {
-  createPONumberFormat,
-  getPONumberFormatByCompanyId,
   updatePONumberFormatCurrentNumberByCompanyId,
   updatePONumberFormatPrefixByCompanyId,
 } from "../repositories/PONumberFormat";
@@ -23,6 +21,7 @@ import {
   updatePOStatusById,
 } from "../repositories/PO";
 import { getPurchasingOrderItemCountsByPOIds } from "../repositories/purchaseOrderItem";
+import { findPONumberFormatByCompanyId } from "./PONumberFormat";
 
 type makePOType = z.infer<typeof createPOSchema> & { companyId: string };
 
@@ -127,29 +126,6 @@ export const makePO = async (
       items: updatedItems,
     });
   });
-};
-
-export const findPONumberFormatByCompanyId = async (
-  db: PrismaClient,
-  companyId: string
-) => {
-  const PONumberFormat = await getPONumberFormatByCompanyId(db, companyId);
-
-  if (!PONumberFormat) {
-    const newlyCreatedPONumberFormatData = await createPONumberFormat(
-      db,
-      companyId
-    );
-    const { prefix, currentNumber } = newlyCreatedPONumberFormatData;
-
-    const formattedPONumber = PONumberFormatter({ prefix, currentNumber });
-    return { prefix, currentNumber, formattedPONumber };
-  }
-
-  const { prefix, currentNumber } = PONumberFormat;
-  const formattedPONumber = PONumberFormatter({ prefix, currentNumber });
-
-  return { prefix, currentNumber, formattedPONumber };
 };
 
 export const changePONumberFormatPrefix = async (
