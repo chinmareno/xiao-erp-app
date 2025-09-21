@@ -7,10 +7,10 @@ import {
   editPOByPOId,
   findLastPOCustomerContactByCompanyId,
   findPOByPOId,
-  findPONumberFormatByCompanyId,
   findPOsByCompanyId,
   makePO,
 } from "~/server/services/PO";
+import { findPONumberFormatByCompanyId } from "~/server/services/PONumberFormat";
 
 export const PORouter = createTRPCRouter({
   createPO: purchasingProcedure

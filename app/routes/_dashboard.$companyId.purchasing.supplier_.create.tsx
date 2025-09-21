@@ -89,9 +89,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error) return { errors: result.error.format() };
 
   const companyId = params.companyId as string;
+  const { contactName, contactPhone, contactEmail, contactNotes, ...rest } =
+    result.data;
+  const contactData = contactName
+    ? {
+        contactName,
+        contactPhone,
+        contactEmail,
+        contactNotes,
+      }
+    : null;
+  const supplierData = {
+    ...rest,
+    contactData,
+  };
 
   const caller = await createCallerWithContext(request, companyId);
-  await caller.purchasing.supplier.createSupplier(result.data);
+
+  await caller.purchasing.supplier.createSupplier(supplierData);
 
   return redirect(`/${companyId}/purchasing/supplier`);
 }

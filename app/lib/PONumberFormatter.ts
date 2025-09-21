@@ -7,7 +7,7 @@ export const PONumberFormatter = ({
 }) => {
   const formattedPONumber = `${prefix}-${currentNumber
     .toString()
-    .padStart(6, "0")}}
+    .padStart(6, "0")}
   `;
 
   return formattedPONumber;

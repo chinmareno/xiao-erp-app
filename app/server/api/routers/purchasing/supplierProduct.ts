@@ -1,10 +1,19 @@
-import { ItemCategory } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, purchasingProcedure } from "../../trpc.server";
-import { normalizeString } from "~/lib/normalizeString";
-import { createSupplierProductSchema } from "~/schemas/purchasing/product";
-import { addSupplierProduct } from "~/server/services/supplierProduct";
+import {
+  createSupplierProductSchema,
+  editPriceSupplierProductBySupplierIdAndItemIdSchema,
+  editSupplierProductSchema,
+} from "~/schemas/purchasing/supplierProduct";
+import {
+  addSupplierProduct,
+  changePriceSupplierProductBySupplierIdAndItemId,
+  editSupplierProduct,
+  findSupplierProductsByItemId,
+  findSupplierProductsBySupplierId,
+  findSuppliersProductsByCompanyId,
+  removeSupplierProductById,
+} from "~/server/services/supplierProduct";
 
 export const supplierProductRouter = createTRPCRouter({
   createSupplierProduct: purchasingProcedure
@@ -31,18 +40,8 @@ export const supplierProductRouter = createTRPCRouter({
       });
     }),
 
-  editProduct: purchasingProcedure
-    .input(
-      z.object({
-        supplierId: z.string().min(1, "Supplier is required"),
-        supplierProductId: z.string().min(1, "Item id is required"),
-        itemId: z.string().min(1, "Item id is required").optional(),
-        itemName: z.string().min(1, "Item name is required").optional(),
-        itemCategory: z.nativeEnum(ItemCategory),
-        price: z.string().min(0, "Price must be a positive number"),
-        priceCurrency: z.string().min(1, "Price currency is required"),
-      })
-    )
+  editSupplierProduct: purchasingProcedure
+    .input(editSupplierProductSchema)
     .mutation(async ({ ctx, input }) => {
       const {
         supplierId,
@@ -53,247 +52,41 @@ export const supplierProductRouter = createTRPCRouter({
         itemId,
         itemCategory,
       } = input;
-      const oldSupplierProduct = await ctx.db.supplierProduct.findUnique({
-        where: { id: supplierProductId },
-        include: { item: true },
+      const companyId = ctx.companyId;
+
+      await editSupplierProduct(ctx.db, {
+        supplierId,
+        supplierProductId,
+        itemName,
+        price,
+        priceCurrency,
+        itemId,
+        itemCategory,
+        companyId,
       });
-      if (!oldSupplierProduct) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Supplier product not found",
-        });
-      }
-
-      if (itemId) {
-        await ctx.db.$transaction([
-          ctx.db.item.update({
-            where: { id: itemId },
-            data: { category: itemCategory },
-          }),
-          ctx.db.supplierProduct.update({
-            where: { id: supplierProductId },
-            data: { itemId },
-          }),
-        ]);
-      } else if (
-        normalizeString(itemName || "") ===
-        normalizeString(oldSupplierProduct.item.name)
-      ) {
-        await ctx.db.$transaction([
-          ctx.db.item.updateMany({
-            where: { name: itemName?.trim() },
-            data: { category: itemCategory },
-          }),
-          ctx.db.supplierProduct.update({
-            where: { id: supplierProductId },
-            data: { price, priceCurrency },
-          }),
-        ]);
-      } else if (itemName) {
-        const supplierItems = await ctx.db.item.findMany({
-          where: { supplierProducts: { some: { supplierId } } },
-        });
-        const sameItemName = supplierItems.find(
-          (item) => normalizeString(item.name) === normalizeString(itemName)
-        );
-        if (sameItemName) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message:
-              "This supplier already has a product for the selected item.",
-          });
-        }
-        await ctx.db.$transaction([
-          ctx.db.item.create({
-            data: {
-              name: itemName,
-              category: itemCategory,
-              companyId: ctx.companyId,
-              supplierProducts: {
-                create: { supplierId, price, priceCurrency },
-              },
-            },
-          }),
-          ctx.db.supplierProduct.delete({ where: { id: supplierProductId } }),
-        ]);
-      }
-
-      const remainingConnections = await ctx.db.supplierProduct.count({
-        where: { itemId: oldSupplierProduct.itemId },
-      });
-
-      if (remainingConnections === 0) {
-        await ctx.db.item.delete({
-          where: { id: oldSupplierProduct.itemId },
-        });
-      }
     }),
 
-  getProductsBySupplierId: purchasingProcedure
-    .input(
-      z.object({
-        supplierId: z.string().min(1, "Supplier is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { supplierId } = input;
+  getSupplierProductsByCompanyId: purchasingProcedure.query(async ({ ctx }) => {
+    const companyId = ctx.companyId;
 
-      const supplierProducts = await ctx.db.supplierProduct.findMany({
-        where: {
-          supplier: {
-            id: supplierId,
-          },
-        },
-        select: {
-          createdAt: true,
-          updatedAt: true,
-          price: true,
-          priceCurrency: true,
-          item: { select: { name: true } },
-        },
-      });
+    const companySupplierProducts = await findSuppliersProductsByCompanyId(
+      ctx.db,
+      companyId
+    );
 
-      const flatProducts = supplierProducts.map((p) => ({
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-        price: p.price,
-        priceCurrency: p.priceCurrency,
-        name: p.item.name,
-      }));
-
-      return flatProducts;
-    }),
-
-  getProductsByCompanyId: purchasingProcedure.query(async ({ ctx }) => {
-    const supplierProducts = await ctx.db.supplierProduct.findMany({
-      where: {
-        supplier: {
-          companyId: ctx.companyId,
-        },
-      },
-      select: {
-        price: true,
-        priceCurrency: true,
-        itemId: true,
-        supplierId: true,
-        item: {
-          select: {
-            name: true,
-            category: true,
-          },
-        },
-      },
-    });
-
-    const grouped = new Map<
-      string,
-      {
-        id: string;
-        name: string;
-        category: ItemCategory;
-        supplierIds: Set<string>;
-        IDR: number[];
-        YUAN: number[];
-      }
-    >();
-
-    for (const sp of supplierProducts) {
-      if (!grouped.has(sp.itemId)) {
-        grouped.set(sp.itemId, {
-          id: sp.itemId,
-          name: sp.item.name,
-          category: sp.item.category,
-          supplierIds: new Set<string>(),
-          IDR: [],
-          YUAN: [],
-        });
-      }
-
-      const group = grouped.get(sp.itemId)!;
-      group.supplierIds.add(sp.supplierId);
-
-      if (sp.priceCurrency === "IDR") {
-        group.IDR.push(Number(sp.price));
-      } else if (sp.priceCurrency === "YUAN") {
-        group.YUAN.push(Number(sp.price));
-      }
-    }
-
-    const result = Array.from(grouped.values()).map((group) => {
-      const formatRange = (
-        prices: number[],
-        symbol: string,
-        formatIDR = false
-      ) => {
-        if (prices.length === 0) return null;
-        const min = Math.min(...prices);
-        const max = Math.max(...prices);
-
-        const formatPrice = (value: number) =>
-          formatIDR ? value.toLocaleString("en-US") : value.toString();
-
-        return min === max
-          ? `${symbol}${formatPrice(min)}`
-          : `${symbol}${formatPrice(min)} – ${symbol}${formatPrice(max)}`;
-      };
-
-      return {
-        id: group.id,
-        name: group.name,
-        category: group.category,
-        supplierCount: group.supplierIds.size,
-        priceRangeIDR: formatRange(group.IDR, "Rp ", true),
-        priceRangeYUAN: formatRange(group.YUAN, "¥"),
-      };
-    });
-
-    return result;
-  }),
-
-  getUniqueItemsByCompanyId: purchasingProcedure.query(async ({ ctx }) => {
-    const supplierIds = await ctx.db.supplier.findMany({
-      where: { companyId: ctx.companyId },
-      select: { id: true },
-    });
-
-    const uniqueItemsBySupplier = await ctx.db.supplierProduct.findMany({
-      where: { supplierId: { in: supplierIds.map((s) => s.id) } },
-      select: {
-        item: true,
-      },
-      distinct: ["itemId"],
-    });
-
-    const flatUniqueItemsBySupplier = uniqueItemsBySupplier.map(({ item }) => ({
-      ...item,
-    }));
-    return flatUniqueItemsBySupplier;
+    return companySupplierProducts;
   }),
 
   deleteSupplierProductById: purchasingProcedure
     .input(
       z.object({
-        supplierId: z.string().min(1),
         supplierProductId: z.string().min(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { supplierId, supplierProductId } = input;
+      const { supplierProductId } = input;
 
-      const deletedSupplierProduct = await ctx.db.supplierProduct.delete({
-        where: { id: supplierProductId, supplierId: supplierId },
-        select: { itemId: true },
-      });
-
-      const remainingConnections = await ctx.db.supplierProduct.count({
-        where: { itemId: deletedSupplierProduct.itemId },
-      });
-
-      if (remainingConnections === 0) {
-        await ctx.db.item.delete({
-          where: { id: deletedSupplierProduct.itemId },
-        });
-      }
+      await removeSupplierProductById(ctx.db, supplierProductId);
     }),
 
   getSupplierProductByItemId: purchasingProcedure
@@ -301,40 +94,37 @@ export const supplierProductRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { itemId } = input;
 
-      const supplierProduct = await ctx.db.supplierProduct.findMany({
-        where: { itemId },
-        include: { supplier: true, item: true },
-        orderBy: { createdAt: "desc" },
-      });
+      const supplierProducts = await findSupplierProductsByItemId(
+        ctx.db,
+        itemId
+      );
 
-      const flattenedSupplierProduct = supplierProduct.map((sp) => ({
-        ...sp,
-        name: sp.item.name,
-        supplierName: sp.supplier.name,
-        category: sp.item.category,
-        price:
-          sp.priceCurrency === "IDR"
-            ? Number(sp.price).toLocaleString("en-US")
-            : sp.price,
-      }));
-      return flattenedSupplierProduct;
+      return supplierProducts;
     }),
 
   editPriceSupplierProductBySupplierIdAndItemId: purchasingProcedure
-    .input(
-      z.object({
-        supplierId: z.string().min(1),
-        itemId: z.string().min(1),
-        price: z.string().min(1, "Price must be a positive number"),
-        priceCurrency: z.string().min(1, "Price currency is required"),
-      })
-    )
+    .input(editPriceSupplierProductBySupplierIdAndItemIdSchema)
     .mutation(async ({ ctx, input }) => {
       const { supplierId, itemId, price, priceCurrency } = input;
 
-      await ctx.db.supplierProduct.updateMany({
-        where: { itemId, supplierId },
-        data: { price, priceCurrency },
+      await changePriceSupplierProductBySupplierIdAndItemId(ctx.db, {
+        supplierId,
+        itemId,
+        price,
+        priceCurrency,
       });
+    }),
+
+  getSupplierProductsBySupplierId: purchasingProcedure
+    .input(z.object({ supplierId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const { supplierId } = input;
+
+      const supplierProducts = findSupplierProductsBySupplierId(
+        ctx.db,
+        supplierId
+      );
+
+      return supplierProducts;
     }),
 });

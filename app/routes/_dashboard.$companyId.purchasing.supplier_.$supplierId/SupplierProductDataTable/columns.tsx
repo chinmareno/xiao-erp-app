@@ -27,9 +27,9 @@ import {
 
 export type SupplierProduct = {
   id: string;
-  name: string;
+  itemName: string;
   price: string;
-  category: ItemCategory;
+  itemCategory: ItemCategory;
   priceCurrency: string;
   createdAt: Date;
   updatedAt: Date;
@@ -42,14 +42,14 @@ export const columns: ColumnDef<SupplierProduct>[] = [
     cell: ({ row }) => row.index + 1,
   },
   {
-    accessorKey: "name",
+    accessorKey: "itemName",
     header: "Item Name",
   },
   {
-    accessorKey: "category",
+    accessorKey: "itemCategory",
     header: "Category",
     cell: ({ row }) => {
-      const category = row.original.category;
+      const category = row.original.itemCategory;
       return category.replaceAll("_", " ");
     },
   },
@@ -114,7 +114,7 @@ function ActionsCell({ row }: { row: Row<SupplierProduct> }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{row.getValue("name")}</DropdownMenuLabel>
+        <DropdownMenuLabel>{row.getValue("itemName")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to={row.original.id}>Edit Supplier Product</Link>
@@ -134,7 +134,7 @@ function ActionsCell({ row }: { row: Row<SupplierProduct> }) {
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
                 This action cannot be undone. This will permanently delete{" "}
-                <strong>{row.original.name}</strong> from supplier products.
+                <strong>{row.original.itemName}</strong> from supplier products.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -147,9 +147,8 @@ function ActionsCell({ row }: { row: Row<SupplierProduct> }) {
                   fetcher.submit(
                     {
                       supplierProductId: row.original.id,
-                      supplierId: params.supplierId as string,
                       companyId: params.companyId as string,
-                      itemName: row.original.name,
+                      itemName: row.original.itemName,
                     },
                     { action: "/api/deleteSupplierProduct", method: "POST" }
                   );

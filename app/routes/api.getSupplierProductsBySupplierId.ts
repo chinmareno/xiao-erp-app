@@ -13,7 +13,7 @@ export async function action({ request }: ActionFunctionArgs) {
   };
   const caller = await createCallerWithContext(request, formData.companyId);
   const result =
-    await caller.purchasing.supplier.getSupplierProductsBySupplierId({
+    await caller.purchasing.supplierProduct.getSupplierProductsBySupplierId({
       supplierId: formData.supplierId,
     });
   return result;

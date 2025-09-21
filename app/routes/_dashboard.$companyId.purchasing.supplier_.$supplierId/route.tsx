@@ -18,8 +18,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
 
   const caller = await createCallerWithContext(request, companyId);
+
+  const supplier = await caller.purchasing.supplier.getSupplierById({
+    supplierId,
+  });
+
   const supplierProducts =
-    await caller.purchasing.supplier.getSupplierProductsBySupplierId({
+    await caller.purchasing.supplierProduct.getSupplierProductsBySupplierId({
       supplierId,
     });
   const supplierPOs =
@@ -27,9 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       supplierId,
     });
 
-  if (supplierProducts === null) throw new Error("Not Found");
-
-  return { ...supplierProducts, POs: supplierPOs };
+  return { supplier, supplierProducts, supplierPOs };
 }
 
 export default function SupplierDetail() {
@@ -40,9 +43,12 @@ export default function SupplierDetail() {
 
   const params = useParams();
 
-  const supplierData = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const supplier = loaderData.supplier;
+  const supplierPOs = loaderData.supplierPOs;
+  const supplierProducts = loaderData.supplierProducts;
 
-  const filteredPOs = supplierData.POs.filter((po) => {
+  const filteredPOs = supplierPOs.filter((po) => {
     if (selectedStatus === "unreceived") return po.status === "UNRECEIVED";
     if (selectedStatus === "received") return po.status === "RECEIVED";
     if (selectedStatus === "inactive") return po.status === "INACTIVE";
@@ -52,7 +58,7 @@ export default function SupplierDetail() {
   return (
     <div className="container mx-auto py-10">
       <h2 className="mb-6 text-xl text-center font-semibold capitalize">
-        {`${supplierData.name}'s ${
+        {`${supplier.name}'s ${
           activeTab === "pos" ? "Purchasing Orders" : "Products Catalog"
         } Table`}
       </h2>
@@ -66,7 +72,7 @@ export default function SupplierDetail() {
           }`}
           onClick={() => setActiveTab("products")}
         >
-          Products ({supplierData._count.products})
+          Products ({supplierProducts.length})
         </button>
         <button
           className={`px-4 py-2 font-medium ${
@@ -78,7 +84,7 @@ export default function SupplierDetail() {
             setActiveTab("pos");
           }}
         >
-          Purchase Orders ({supplierData._count.purchaseOrders})
+          Purchase Orders ({supplierPOs.length})
         </button>
       </div>
 
@@ -93,10 +99,7 @@ export default function SupplierDetail() {
               <span>Add Product</span>
             </Button>
           </div>
-          <ProductDataTable
-            columns={productColumns}
-            data={supplierData.products}
-          />
+          <ProductDataTable columns={productColumns} data={supplierProducts} />
         </div>
       ) : (
         <div>

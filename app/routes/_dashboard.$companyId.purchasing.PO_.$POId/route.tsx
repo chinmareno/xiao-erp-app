@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const suppliers = await caller.purchasing.supplier.getSuppliersByCompanyId();
   const products =
-    await caller.purchasing.supplierProduct.getProductsByCompanyId();
+    await caller.purchasing.supplierProduct.getSupplierProductsByCompanyId();
 
   return { suppliers, products };
 }

@@ -20,15 +20,7 @@ export type Item = {
   price: string;
 };
 
-type SupplierProducts = {
-  id: string;
-  itemId: string;
-  name: string;
-  price: string;
-  priceCurrency: string;
-  createdAt: Date;
-  updatedAt: Date;
-}[];
+type SupplierProducts = GetSupplierProductsBySupplierIdActionData;
 
 type Props = {
   items: Item[];
@@ -67,7 +59,7 @@ export const ItemsInformation = ({
       fetcherSupplierProducts.data &&
       fetcherSupplierProducts.state === "idle"
     ) {
-      const { products } =
+      const products =
         fetcherSupplierProducts.data as GetSupplierProductsBySupplierIdActionData;
       setSupplierProduct(products);
     }
@@ -315,10 +307,10 @@ export const ItemsInformation = ({
                     return (
                       <SelectItem
                         className={isSelected ? "hidden" : ""}
-                        key={product.name + index}
+                        key={product.itemName + index}
                         value={product.itemId}
                       >
-                        {product.name}
+                        {product.itemName}
                       </SelectItem>
                     );
                   })}

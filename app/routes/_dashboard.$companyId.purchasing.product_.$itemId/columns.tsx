@@ -2,7 +2,7 @@ import { ItemCategory } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 
 type Product = {
-  name: string;
+  itemName: string;
   supplierName: string;
   id: string;
   image: string | null;
@@ -12,24 +12,24 @@ type Product = {
   priceCurrency: string;
   itemId: string;
   price: string;
-  category: ItemCategory;
+  itemCategory: ItemCategory;
 };
 
-export const columns: ColumnDef<Product>[] = [
+export const columns: ColumnDef<Product, unknown>[] = [
   {
     id: "no",
     header: "No.",
     cell: ({ row }) => row.index + 1,
   },
   {
-    accessorKey: "name",
+    accessorKey: "itemName",
     header: "Product  ",
   },
   {
     accessorKey: "category",
     header: "Category",
     cell: ({ row }) => {
-      const category = row.original.category;
+      const category = row.original.itemCategory;
       return category.replaceAll("_", " ");
     },
   },

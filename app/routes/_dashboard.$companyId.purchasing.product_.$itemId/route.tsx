@@ -5,11 +5,12 @@ import { columns } from "./columns";
 import { createCallerWithContext } from "~/server/api/root.server";
 import { z } from "zod";
 import { formDataParser } from "~/lib/formDataParser";
+import { PriceCurrency } from "@prisma/client";
 
 const editPriceSchema = z.object({
   supplierId: z.string().min(1),
   price: z.string().min(1),
-  priceCurrency: z.string().min(1),
+  priceCurrency: z.nativeEnum(PriceCurrency),
 });
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
@@ -50,7 +51,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 export default function ProductItemPage() {
   const supplierProducts = useLoaderData<typeof loader>();
   const productName =
-    supplierProducts.length > 0 ? supplierProducts[0].name : "Product";
+    supplierProducts.length > 0 ? supplierProducts[0].supplierName : "Product";
 
   return (
     <div className="container mx-auto flex flex-col py-10">

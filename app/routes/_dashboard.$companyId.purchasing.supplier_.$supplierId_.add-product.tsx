@@ -26,7 +26,7 @@ import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { TRPCError } from "@trpc/server";
 import { toast } from "sonner";
 import { ItemCategory } from "@prisma/client";
-import { createProductSchema } from "~/schemas/purchasing/product";
+import { createSupplierProductSchema } from "~/schemas/purchasing/supplierProduct";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const suppliers = await caller.purchasing.supplier.getSuppliersByCompanyId();
   const products =
-    await caller.purchasing.supplierProduct.getUniqueItemsByCompanyId();
+    await caller.purchasing.supplierProduct.getSupplierProductsByCompanyId();
   return { suppliers, products };
 }
 
@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const caller = await createCallerWithContext(request, companyId);
   const formData = await formDataParser(request);
-  const result = await createProductSchema.safeParseAsync(formData);
+  const result = await createSupplierProductSchema.safeParseAsync(formData);
   if (!result.success) {
     console.log({ errors: result.error.format() });
     return null;
@@ -141,10 +141,10 @@ export default function ProductCreate() {
               <div className="flex gap-2">
                 <Select
                   onValueChange={(val) => {
-                    const itemCategory = loaderData.products.find(
-                      (product) => product.id === val
+                    const selectedItem = loaderData.products.find(
+                      (product) => product.itemId === val
                     );
-                    setItemCategory(itemCategory?.category ?? "");
+                    setItemCategory(selectedItem?.itemCategory ?? "");
                   }}
                   name="itemId"
                   required
@@ -153,9 +153,9 @@ export default function ProductCreate() {
                     <SelectValue placeholder="Select item" />
                   </SelectTrigger>
                   <SelectContent>
-                    {loaderData.products.map((i) => (
-                      <SelectItem key={i.id} value={i.id}>
-                        {i.name}
+                    {loaderData.products.map(({ itemId, itemName }) => (
+                      <SelectItem key={itemId} value={itemId}>
+                        {itemName}
                       </SelectItem>
                     ))}
                   </SelectContent>

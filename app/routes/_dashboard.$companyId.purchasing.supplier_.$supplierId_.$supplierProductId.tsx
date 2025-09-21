@@ -26,7 +26,7 @@ import { createCallerWithContext } from "~/server/api/root.server";
 import { thousandSeparatorFormatter } from "~/lib/thousandSeparatorFormatter";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ItemCategory } from "@prisma/client";
+import { ItemCategory, PriceCurrency } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -34,23 +34,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
 
   const caller = await createCallerWithContext(request, companyId);
-  const supplierProducts =
-    await caller.purchasing.supplier.getSupplierProductsBySupplierId({
-      supplierId,
-    });
+  const supplier = await caller.purchasing.supplier.getSupplierById({
+    supplierId,
+  });
   const suppliersProducts =
-    await caller.purchasing.supplierProduct.getProductsByCompanyId();
+    await caller.purchasing.supplierProduct.getSupplierProductsByCompanyId();
 
-  const existingItemIds = new Set(
-    supplierProducts.products.map((p) => p.itemId)
-  );
+  const existingItemIds = new Set(supplier.products.map((p) => p.itemId));
   const filteredSuppliersProducts = suppliersProducts.filter(
-    (sp) => !existingItemIds.has(sp.id)
+    (sp) => !existingItemIds.has(sp.itemId)
   );
 
-  if (supplierProducts === null) throw new Error("Not Found");
-
-  return { ...supplierProducts, filteredSuppliersProducts };
+  return { supplier, filteredSuppliersProducts };
 }
 
 const EditProductSchema = z.object({
@@ -58,7 +53,7 @@ const EditProductSchema = z.object({
   itemName: z.string().min(1, "Item name is required").optional(),
   itemCategory: z.nativeEnum(ItemCategory),
   price: z.string().min(0, "Price must be a positive number"),
-  priceCurrency: z.string().min(1, "Price currency is required"),
+  priceCurrency: z.nativeEnum(PriceCurrency),
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -75,11 +70,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const normalizedPrice = price.replace(/,/g, "");
 
   const supplierId = params.supplierId as string;
-  const supplierProductId = params.productId as string;
+  const supplierProductId = params.supplierProductId as string;
 
   try {
     if (itemId) {
-      await caller.purchasing.supplierProduct.editProduct({
+      await caller.purchasing.supplierProduct.editSupplierProduct({
         price: normalizedPrice,
         priceCurrency,
         supplierId,
@@ -88,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         itemCategory,
       });
     } else {
-      await caller.purchasing.supplierProduct.editProduct({
+      await caller.purchasing.supplierProduct.editSupplierProduct({
         price: normalizedPrice,
         priceCurrency,
         supplierId,
@@ -125,11 +120,12 @@ export default function ProductEdit() {
   const actionData = useActionData<typeof action>();
 
   const params = useParams();
-  const productId = params.productId as string;
+  const productId = params.supplierProductId as string;
   const loaderData = useLoaderData<typeof loader>();
+  const supplier = loaderData.supplier;
   const navigate = useNavigate();
 
-  const selectedProduct = loaderData?.products.find(
+  const selectedProduct = supplier.products.find(
     (product) => product.id === productId
   );
 
@@ -145,7 +141,7 @@ export default function ProductEdit() {
       return toast.error("Invalid Product Id");
     }
 
-    const unchangeName = selectedProduct.name === itemName.trim();
+    const unchangeName = selectedProduct.itemName === itemName.trim();
     const unchangeItemPriceCurrency =
       selectedProduct.priceCurrency === priceCurrency;
     const normalizedOldPrice = selectedProduct.price;
@@ -175,12 +171,12 @@ export default function ProductEdit() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="border rounded-lg p-4 bg-muted">
           <h3 className="font-semibold mb-4">
-            Previous {loaderData.name}'s Product Info
+            Previous {supplier.name}'s Product Info
           </h3>
           {selectedProduct ? (
             <ul className="space-y-2">
               <li>
-                <strong>Name:</strong> {selectedProduct.name}
+                <strong>Name:</strong> {selectedProduct.itemName}
               </li>
               <li>
                 <strong>Price:</strong>{" "}
@@ -198,7 +194,7 @@ export default function ProductEdit() {
           <Form method="POST" onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Supplier</Label>
-              <p>{loaderData?.name}</p>
+              <p>{supplier.name}</p>
             </div>
 
             <div>
@@ -209,28 +205,30 @@ export default function ProductEdit() {
                     required
                     name="itemId"
                     onValueChange={(val) => {
-                      const itemCategory =
+                      const selectedItem =
                         loaderData.filteredSuppliersProducts.find(
-                          (product) => val === product.id
+                          (product) => val === product.itemId
                         );
-                      setItemCategory(itemCategory?.category || "");
+                      setItemCategory(selectedItem?.itemCategory || "");
                     }}
                   >
                     <SelectTrigger className="mb-1">
                       <SelectValue placeholder="Select an item" />
                     </SelectTrigger>
                     <SelectContent>
-                      {loaderData.filteredSuppliersProducts.map((item) => {
-                        return (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name}
-                          </SelectItem>
-                        );
-                      })}
+                      {loaderData.filteredSuppliersProducts.map(
+                        ({ itemId, itemName }) => {
+                          return (
+                            <SelectItem key={itemId} value={itemId}>
+                              {itemName}
+                            </SelectItem>
+                          );
+                        }
+                      )}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground italic">
-                    To change only the price by using the same item name{" "}
+                    Only wanna change the price?{" "}
                     <Button
                       type="button"
                       variant="link"
@@ -254,18 +252,18 @@ export default function ProductEdit() {
                     required
                   />
                   <p className="text-xs text-muted-foreground italic">
-                    To change only the price, use the same item name.{" "}
+                    Only change the price by fill it with the same item name.{" "}
                     <Button
                       type="button"
                       variant="link"
                       className="text-xs pl-0 text-muted-foreground italic"
                       onClick={() => {
-                        setItemName(selectedProduct?.name || "");
+                        setItemName(selectedProduct?.itemName || "");
                         setPriceCurrency(selectedProduct?.priceCurrency || "");
-                        setItemCategory(selectedProduct?.category || "");
+                        setItemCategory(selectedProduct?.itemCategory || "");
                       }}
                     >
-                      click here to auto-fill it.
+                      click here to auto-fill.
                     </Button>{" "}
                   </p>
                 </>

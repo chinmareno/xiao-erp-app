@@ -191,6 +191,49 @@ export const getPOById = async (
   }
 };
 
+export const getPOsBySupplierId = async (
+  db: DBClientType,
+  supplierId: string
+) => {
+  try {
+    const POs = await db.purchaseOrder.findMany({
+      where: { supplierId },
+      include: {
+        supplier: { select: { taxId: true } },
+      },
+    });
+
+    const poIds = POs.map((po) => po.id);
+    const poItemCounts = await db.purchaseOrderItem.groupBy({
+      by: ["purchaseOrderId"],
+      _count: { purchaseOrderId: true },
+      where: {
+        purchaseOrderId: { in: poIds },
+      },
+    });
+
+    const flattenedPOs = POs.map(({ supplier, id, ...rest }) => {
+      const poItemCount = poItemCounts.find(
+        ({ purchaseOrderId }) => purchaseOrderId === id
+      );
+      return {
+        ...rest,
+        id,
+        supplierTaxId: supplier.taxId,
+        totalItemTypes: poItemCount?._count.purchaseOrderId as number,
+      };
+    });
+
+    return flattenedPOs;
+  } catch (error) {
+    repositoryErrorLogger({
+      method: "getPOsBySupplierId",
+      error,
+    });
+    throw error;
+  }
+};
+
 export const updatePOStatusById = async (
   db: DBClientType,
   {

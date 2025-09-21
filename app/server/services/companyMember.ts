@@ -107,7 +107,7 @@ export const findCompanyMemberByUserIdAndCompanyId = async (
     });
     throw new TRPCError({
       code: "NOT_FOUND",
-      message: "Member not found in this company " + userId,
+      message: `Member with userId: ${userId} not found in company with id ${companyId} `,
     });
   }
 

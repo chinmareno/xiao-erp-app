@@ -11,7 +11,12 @@ export const createCallerWithContext = async (
   const createContext = await createTRPCContext(req, companyId);
 
   return createCaller(createContext, {
-    onError: ({ ctx, error }) => {
+    onError: ({ ctx, error, path, input }) => {
+      console.warn(
+        `Procedure Error with path (${path}) with input (${JSON.stringify(
+          input
+        )})`
+      );
       if (error.code === "BAD_REQUEST" && error.cause instanceof ZodError) {
         console.warn(
           `Client Zod Validation bypass detected (userName:${

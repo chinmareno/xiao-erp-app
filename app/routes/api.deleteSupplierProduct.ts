@@ -5,7 +5,6 @@ import { createCallerWithContext } from "~/server/api/root.server";
 import { formDataParser } from "~/lib/formDataParser";
 
 const deleteSupplierProductSchema = z.object({
-  supplierId: z.string().min(1),
   supplierProductId: z.string().min(1),
   companyId: z.string().min(1),
   itemName: z.string().min(1),
@@ -21,12 +20,11 @@ export async function action({ request }: ActionFunctionArgs) {
       message: "Invalid supplier product data",
     });
   }
-  const { companyId, supplierId, supplierProductId, itemName } = result.data;
+  const { companyId, supplierProductId, itemName } = result.data;
 
   const caller = await createCallerWithContext(request, companyId);
 
   await caller.purchasing.supplierProduct.deleteSupplierProductById({
-    supplierId,
     supplierProductId,
   });
 

@@ -42,6 +42,15 @@ export const createCallerFactory = t.createCallerFactory;
 
 export const createTRPCRouter = t.router;
 
+export const publicProcedure = t.procedure.use(({ ctx, next }) => {
+  return next({
+    ctx: {
+      session: ctx.session,
+      role: ctx.role,
+    },
+  });
+});
+
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session) {
     throw new TRPCError({

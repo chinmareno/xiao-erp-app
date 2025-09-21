@@ -7,8 +7,6 @@ import {
   getCompanyById,
 } from "~/server/repositories/company";
 import { createInviteLink } from "../repositories/inviteLink";
-import { createCompanyMember } from "../repositories/companyMember";
-import { createPONumberFormat } from "../repositories/PONumberFormat";
 
 export type makeCompanyType = {
   name: string;
@@ -23,18 +21,12 @@ export const makeCompany = async (
   db: PrismaClient,
   { name, address, industry, desc, userId }: makeCompanyType
 ) => {
-  const companyId = await db.$transaction(async (tx) => {
-    const { id: companyId } = await createCompany(tx, {
-      name,
-      address,
-      industry,
-      desc,
-      userId,
-    });
-    await createCompanyMember(tx, { companyId, userId, role: "OWNER" });
-    await createPONumberFormat(tx, companyId);
-
-    return companyId;
+  const { id: companyId } = await createCompany(db, {
+    name,
+    address,
+    industry,
+    desc,
+    userId,
   });
 
   return companyId;

@@ -10,7 +10,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const caller = await createCallerWithContext(request, companyId);
   const products =
-    await caller.purchasing.supplierProduct.getProductsByCompanyId();
+    await caller.purchasing.supplierProduct.getSupplierProductsByCompanyId();
 
   return products;
 }

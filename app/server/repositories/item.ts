@@ -1,13 +1,27 @@
+import { PriceCurrency } from "@prisma/client";
 import { repositoryErrorLogger } from "~/lib/logger/repositoryErrorLogger";
 import { DBClientType } from "~/types/DBClientType";
 
-type CreateItemWithSupplierProductType = {
+type ItemData = {
   name: string;
   category: "RAW_MATERIAL" | "SUPPORTING_MATERIAL" | "FINISHED_GOODS";
   companyId: string;
   supplierId: string;
   price: string;
-  priceCurrency: string;
+  priceCurrency: PriceCurrency;
+};
+
+type CreateItemWithSupplierProductType = ItemData;
+
+type UpdateItemByIdType = {
+  data: Partial<ItemData>;
+  itemId: string;
+};
+
+type UpdateItemByItemNameAndCompanyIdType = {
+  data: Partial<ItemData>;
+  itemName: string;
+  companyId: string;
 };
 
 export const createItemWithSupplierProduct = async (
@@ -77,6 +91,60 @@ export const getItemByCompanyId = async (
   } catch (error) {
     repositoryErrorLogger({
       method: "getItemByCompanyId",
+      error,
+    });
+    throw error;
+  }
+};
+
+export const updateItemById = async (
+  db: DBClientType,
+  { itemId, data }: UpdateItemByIdType
+) => {
+  try {
+    const item = await db.item.update({
+      where: { id: itemId },
+      data,
+    });
+
+    return item;
+  } catch (error) {
+    repositoryErrorLogger({
+      method: "updateItemById",
+      error,
+    });
+    throw error;
+  }
+};
+
+export const updateItemByItemNameAndCompanyId = async (
+  db: DBClientType,
+  { itemName, companyId, data }: UpdateItemByItemNameAndCompanyIdType
+) => {
+  try {
+    const item = await db.item.update({
+      where: { name_companyId: { name: itemName, companyId } },
+      data,
+    });
+
+    return item;
+  } catch (error) {
+    repositoryErrorLogger({
+      method: "updateItemByItemNameAndCompanyId",
+      error,
+    });
+    throw error;
+  }
+};
+
+export const deleteItemById = async (db: DBClientType, itemId: string) => {
+  try {
+    await db.item.delete({
+      where: { id: itemId },
+    });
+  } catch (error) {
+    repositoryErrorLogger({
+      method: "deleteItemById",
       error,
     });
     throw error;

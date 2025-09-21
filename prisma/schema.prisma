@@ -203,6 +203,13 @@ model Item {
   updatedAt DateTime  @updatedAt
   supplierProducts  SupplierProduct[]
   purchaseOrderItems PurchaseOrderItem[]
+
+  @@unique([name,companyId])
+}
+
+enum PriceCurrency {
+  IDR
+  YUAN
 }
 
 model SupplierProduct {
@@ -212,7 +219,7 @@ model SupplierProduct {
   supplierId         String
   supplier           Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   price              String
-  priceCurrency      String
+  priceCurrency      PriceCurrency
   image              String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -271,7 +278,7 @@ model PurchaseOrder {
   companyId        String
   company          Company            @relation(fields: [companyId ], references: [id], onDelete: Cascade)
   @@unique([companyId, PONumber])
-  priceCurrency            String     @default("IDR")
+  priceCurrency            PriceCurrency @default(IDR)
   supplierName             String
   supplierContactName      String
   supplierContactEmail     String?

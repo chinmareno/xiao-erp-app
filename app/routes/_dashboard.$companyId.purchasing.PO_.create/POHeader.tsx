@@ -6,14 +6,10 @@ type Props = {
   fetcherPOFormat: FetcherWithComponents<unknown>;
 };
 
-export const POHeader = ({ loaderData, fetcherPOFormat }: Props) => {
+export const POHeader = ({ loaderData }: Props) => {
   const todayDate = new Date();
 
-  const PONumberFormat = fetcherPOFormat.formData
-    ? `${fetcherPOFormat.formData.get("prefix")}-${
-        loaderData.POFormat.PONumberCurrentNumber
-      }`
-    : `${loaderData.POFormat.PONumberPrefix}-${loaderData.POFormat.PONumberCurrentNumber}`;
+  const PONumberFormat = loaderData.POFormat;
 
   return (
     <div className="flex justify-between items-start mb-8">

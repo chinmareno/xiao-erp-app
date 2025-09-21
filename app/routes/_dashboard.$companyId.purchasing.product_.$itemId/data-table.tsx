@@ -26,7 +26,7 @@ type Row = {
   priceCurrency: string;
   itemId: string;
   price: string;
-  name: string;
+  itemName: string;
   supplierName: string;
 };
 
@@ -49,12 +49,12 @@ export function DataTable<TData extends Row, TValue>({
   const [itemId, setItemId] = useState("");
 
   const handleRowClick = (row: Row) => {
-    const { itemId, name, price, priceCurrency, supplierId, supplierName } =
+    const { itemId, itemName, price, priceCurrency, supplierId, supplierName } =
       row;
 
     setSupplierName(supplierName);
     setSupplierId(supplierId);
-    setItemName(name);
+    setItemName(itemName);
     setInitialPrice(price);
     setInitialCurrency(priceCurrency);
     setItemId(itemId);

@@ -20,7 +20,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 }
 
-export function DataTable<TData extends { id: string }, TValue>({
+export function DataTable<TData extends { itemId: string }, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
@@ -59,7 +59,7 @@ export function DataTable<TData extends { id: string }, TValue>({
                 key={row.id}
                 className="cursor-pointer hover:bg-gray-100"
                 data-state={row.getIsSelected() && "selected"}
-                onClick={() => navigate(row.original.id)}
+                onClick={() => navigate(row.original.itemId)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>

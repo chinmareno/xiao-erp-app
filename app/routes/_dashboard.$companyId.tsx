@@ -8,6 +8,8 @@ export type CompanyIdLoader = typeof loader;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
+  if (companyId == "favicon.ico")
+    throw new Response("Not Found", { status: 404 });
 
   const caller = await createCallerWithContext(request, companyId);
 
