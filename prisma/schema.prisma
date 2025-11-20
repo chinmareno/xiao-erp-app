@@ -218,7 +218,7 @@ model SupplierProduct {
   item               Item                @relation(fields: [itemId], references: [id], onDelete: Cascade)
   supplierId         String
   supplier           Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  price              String
+  price              Int
   priceCurrency      PriceCurrency
   image              String?
   createdAt          DateTime            @default(now())

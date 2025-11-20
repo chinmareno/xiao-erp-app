@@ -5,19 +5,14 @@ import { editPriceSupplierProductBySupplierIdAndItemIdSchema } from "~/schemas/p
 import { DBClientType } from "~/types/DBClientType";
 
 type CreateSupplierProductType = {
-  price: string;
+  price: number;
   priceCurrency: PriceCurrency;
   supplierId: string;
   itemId: string;
 };
 
 type UpdateSupplierProductType = {
-  data: {
-    price?: string;
-    priceCurrency?: PriceCurrency;
-    supplierId?: string;
-    itemId?: string;
-  };
+  data: Partial<CreateSupplierProductType>;
   supplierProductId: string;
 };
 
@@ -207,8 +202,8 @@ export const getSupplierProductsSummaryByCompanyId = async (
           itemName: item?.name || "",
           itemCategory: item?.category as ItemCategory,
           supplierCount: _count.supplierId,
-          minPrice: _min.price as string,
-          maxPrice: _max.price as string,
+          minPrice: _min.price,
+          maxPrice: _max.price,
         };
       }
     );

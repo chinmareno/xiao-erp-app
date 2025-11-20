@@ -30,6 +30,7 @@ import { getWarehousesByCompanyId } from "../repositories/warehouse";
 import { createManyStockItem } from "../repositories/stockItem";
 import { serviceErrorLogger } from "~/lib/logger/serviceErrorLogger";
 import { DBClientType } from "~/types/DBClientType";
+import { findYuanIdrRate } from "./yuanIdrRate";
 
 type AddSupplierProductType = z.infer<typeof createSupplierProductSchema> & {
   companyId: string;
@@ -239,31 +240,60 @@ export const findSuppliersProductsByCompanyId = async (
     db,
     companyId
   );
+  const { yuanToIdrRate, idrToYuanRate } = await findYuanIdrRate(db);
+
   const formattedSuppliersProducts = suppliersProducts.reduce(
     (acc, item) => {
       const { priceCurrency, minPrice, maxPrice, ...rest } = item;
       const isIdr = priceCurrency === "IDR";
       const isOnlyOnePrice = minPrice === maxPrice;
-      const formattedMinPrice = isIdr
-        ? Number(minPrice).toLocaleString("en-US")
-        : minPrice;
-      const formattedMaxPrice = isIdr
-        ? Number(maxPrice).toLocaleString("en-US")
-        : maxPrice;
-      const priceRangeIDR = isIdr
-        ? isOnlyOnePrice
-          ? `Rp ${formattedMinPrice}`
-          : `Rp ${formattedMinPrice} – Rp ${formattedMaxPrice}`
-        : "";
-      const priceRangeYUAN = isIdr
-        ? isOnlyOnePrice
-          ? `¥${formattedMinPrice}`
-          : `¥${formattedMinPrice} – ¥${formattedMaxPrice}`
-        : "";
+
+      let priceRangeIDR = "";
+      let priceRangeYUAN = "";
+
+      if (!minPrice || !maxPrice) {
+        priceRangeIDR = "N/A";
+        priceRangeYUAN = "N/A";
+      } else {
+        if (isIdr) {
+          const formattedMinPriceIdr = minPrice.toLocaleString("en-US");
+          const formattedMaxPriceIdr = maxPrice.toLocaleString("en-US");
+
+          const formattedMinPriceYuan = String(
+            (minPrice * idrToYuanRate).toFixed(2)
+          );
+          const formattedMaxPriceYuan = String(
+            (maxPrice * idrToYuanRate).toFixed(2)
+          );
+
+          priceRangeIDR = isOnlyOnePrice
+            ? `Rp ${formattedMinPriceIdr}`
+            : `Rp ${formattedMinPriceIdr} – Rp ${formattedMaxPriceIdr}`;
+          priceRangeYUAN = isOnlyOnePrice
+            ? `¥${formattedMinPriceYuan}`
+            : `¥${formattedMinPriceYuan} – ¥${formattedMaxPriceYuan}`;
+        } else if (!isIdr) {
+          const formattedMinPriceIdr = (
+            minPrice * yuanToIdrRate
+          ).toLocaleString("en-US");
+          const formattedMaxPriceIdr = (
+            maxPrice * yuanToIdrRate
+          ).toLocaleString("en-US");
+
+          const formattedMinPriceYuan = String(minPrice);
+          const formattedMaxPriceYuan = String(maxPrice);
+
+          priceRangeIDR = isOnlyOnePrice
+            ? `Rp ${formattedMinPriceIdr}`
+            : `Rp ${formattedMinPriceIdr} – Rp ${formattedMaxPriceIdr}`;
+          priceRangeYUAN = isOnlyOnePrice
+            ? `¥${formattedMinPriceYuan}`
+            : `¥${formattedMinPriceYuan} – ¥${formattedMaxPriceYuan}`;
+        }
+      }
       const existingIndex = acc.findIndex(
         ({ itemId }) => item.itemId === itemId
       );
-
       if (existingIndex !== -1) {
         if (isIdr) {
           acc[existingIndex].priceRangeIDR = priceRangeIDR;

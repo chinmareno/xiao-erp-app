@@ -7,7 +7,7 @@ type ItemData = {
   category: "RAW_MATERIAL" | "SUPPORTING_MATERIAL" | "FINISHED_GOODS";
   companyId: string;
   supplierId: string;
-  price: string;
+  price: number;
   priceCurrency: PriceCurrency;
 };
 
