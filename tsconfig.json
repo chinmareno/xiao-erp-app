@@ -23,7 +23,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["./src/*"]
     },
 
     // Vite takes care of building everything, not tsc.
