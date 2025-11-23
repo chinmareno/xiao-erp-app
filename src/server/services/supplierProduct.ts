@@ -31,6 +31,7 @@ import { createManyStockItem } from "../repositories/stockItem";
 import { serviceErrorLogger } from "~/lib/logger/serviceErrorLogger";
 import { DBClientType } from "~/types/DBClientType";
 import { findYuanIdrRate } from "./yuanIdrRate";
+import { findRemainingItemConnectionsByItemId } from "./item";
 
 type AddSupplierProductType = z.infer<typeof createSupplierProductSchema> & {
   companyId: string;
@@ -333,11 +334,11 @@ export const removeSupplierProductById = async (
     db,
     supplierProductId
   );
-  const remainingConnections = await getSupplierProductCountByItemId(
+  const remainingItemConnections = await findRemainingItemConnectionsByItemId(
     db,
     deletedSupplierProduct.itemId
   );
-  if (remainingConnections === 0) {
+  if (remainingItemConnections === 0) {
     await deleteItemById(db, deletedSupplierProduct.itemId);
   }
 };
