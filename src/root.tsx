@@ -12,11 +12,11 @@ import { type LinksFunction, data } from "@remix-run/node";
 
 import "./tailwind.css";
 
-import localeResources from "../locales/locales.server";
+import localeResources from "./public/locales/locales";
 import { Toaster } from "./components/ui/sonner";
 
 import icon from "./public/favicon.ico";
-import NotFound from "./routes/$.route.";
+import NotFound from "./routes/page/not-found/$.route";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

@@ -20,7 +20,7 @@ const editPOSchema = z.object({
   ]),
   customerContactPhone: z.union([z.string(), z.literal("")]),
   priceCurrency: z.enum(["YUAN", "IDR"]),
-  items: z
+  POItems: z
     .array(
       z.object({
         itemId: z.string().min(1, "Product is required"),
@@ -61,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
     customerContactEmail,
     customerContactPhone,
     priceCurrency,
-    items,
+    POItems,
     companyId,
   } = parsed.data;
 
@@ -81,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
     customerContactEmail,
     customerContactPhone,
     priceCurrency,
-    items,
+    POItems,
   });
 
   return redirect(`/${companyId}/purchasing/PO`);

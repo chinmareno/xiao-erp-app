@@ -9,7 +9,7 @@ import {
 import {
   createItemWithSupplierProduct,
   deleteItemById,
-  getItemByCompanyId,
+  getItemsByCompanyId,
   getItemByIdAndSupplierId,
   updateItemById,
   updateItemByItemNameAndCompanyId,
@@ -21,7 +21,6 @@ import {
   getSupplierProductsSummaryByCompanyId,
   updateSupplierProductById,
   getSupplierProductByItemId,
-  getSupplierProductCountByItemId,
   updateSupplierProductPriceBySupplierIdAndItemId,
   deleteSupplierProductById,
 } from "../repositories/supplierProduct";
@@ -75,7 +74,7 @@ export const addSupplierProduct = async (
       itemId,
     });
   } else if (itemName) {
-    const companyItems = await getItemByCompanyId(db, companyId);
+    const companyItems = await getItemsByCompanyId(db, companyId);
 
     const sameItemName = companyItems.find(
       (item) => normalizeString(item.name) === normalizeString(itemName)

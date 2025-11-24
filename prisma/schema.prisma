@@ -305,7 +305,8 @@ model PurchaseOrder {
   expectedFullReceivedDate DateTime?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
-  items            PurchaseOrderItem[]
+  
+  POItems            PurchaseOrderItem[]
 }
 
 model YuanIdrRate {
@@ -323,6 +324,10 @@ model PurchaseOrderItem {
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   itemId          String
   item            Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  itemName        String
+  itemCategory    ItemCategory 
+
   unit            String              @default("pcs")
   quantity        Int
   costYuan        Float

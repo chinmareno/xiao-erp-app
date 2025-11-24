@@ -4,3 +4,5 @@ export const MODULES_SUBMODULES = {
   ACCOUNTING: ["invoices", "reports"],
   SALES: ["orders", "customers"],
 } as const;
+
+export type ModulesType = keyof typeof MODULES_SUBMODULES;

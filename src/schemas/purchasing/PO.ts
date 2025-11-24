@@ -16,7 +16,7 @@ export const createPOSchema = z.object({
   ]),
   customerContactPhone: z.union([z.string(), z.literal("")]),
   priceCurrency: z.enum(["YUAN", "IDR"]),
-  items: z
+  POItems: z
     .array(
       z.object({
         itemId: z.string().min(1, "Product is required"),
@@ -45,7 +45,7 @@ export const editPOSchema = z.object({
   ]),
   customerContactPhone: z.union([z.string(), z.literal("")]),
   priceCurrency: z.enum(["YUAN", "IDR"]),
-  items: z
+  POItems: z
     .array(
       z.object({
         itemId: z.string().min(1, "Product is required"),

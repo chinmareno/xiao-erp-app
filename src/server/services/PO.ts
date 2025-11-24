@@ -22,6 +22,7 @@ import {
 } from "../repositories/PO";
 import { getPurchasingOrderItemCountsByPOIds } from "../repositories/purchaseOrderItem";
 import { findPONumberFormatByCompanyId } from "./PONumberFormat";
+import { getItemsByIds } from "../repositories/item";
 
 type makePOType = z.infer<typeof createPOSchema> & { companyId: string };
 
@@ -43,7 +44,7 @@ export const makePO = async (
     subTotal,
     grandTotal,
     companyId,
-    items,
+    POItems,
   }: makePOType
 ) => {
   const supplier = await findSupplierBySupplierId(db, supplierId);
@@ -76,24 +77,29 @@ export const makePO = async (
   const { idrToYuanRate, yuanToIdrRate } = yuanIdrRate;
   const PONumberFormat = await findPONumberFormatByCompanyId(db, companyId);
 
-  const updatedItems = items.map((item) => {
-    if (priceCurrency === "YUAN") {
-      return {
-        itemId: item.itemId,
-        quantity: item.quantity,
-        costYuan: item.itemCost,
-        costIdr: item.itemCost * yuanToIdrRate,
-        unit: item.unit,
-      };
-    } else {
-      return {
-        itemId: item.itemId,
-        quantity: item.quantity,
-        costYuan: item.itemCost * idrToYuanRate,
-        costIdr: item.itemCost,
-        unit: item.unit,
-      };
-    }
+  const itemIds = POItems.map((POItem) => POItem.itemId);
+  const items = await getItemsByIds(db, itemIds);
+
+  const updatedPOItems = POItems.map((POItem) => {
+    const item = items.find((i) => i.id === POItem.itemId)!;
+
+    const isIdr = priceCurrency === "IDR";
+    const POItemCostIdr = isIdr
+      ? POItem.itemCost
+      : POItem.itemCost * yuanToIdrRate;
+    const POItemCostYuan = isIdr
+      ? POItem.itemCost * idrToYuanRate
+      : POItem.itemCost;
+
+    return {
+      itemId: POItem.itemId,
+      itemName: item.name,
+      itemCategory: item.category,
+      quantity: POItem.quantity,
+      costYuan: POItemCostYuan,
+      costIdr: POItemCostIdr,
+      unit: POItem.unit,
+    };
   });
 
   await db.$transaction(async (tx) => {
@@ -123,7 +129,7 @@ export const makePO = async (
       tax,
       discount,
       companyId,
-      items: updatedItems,
+      POItems: updatedPOItems,
     });
   });
 };
@@ -209,7 +215,7 @@ export const editPOByPOId = async (
     customerContactEmail,
     customerContactName,
     customerContactPhone,
-    items,
+    POItems,
     priceCurrency,
     supplierContactId,
     supplierId,
@@ -251,25 +257,29 @@ export const editPOByPOId = async (
 
   const yuanIdrRate = await findYuanIdrRate(db);
   const { idrToYuanRate, yuanToIdrRate } = yuanIdrRate;
+  const itemIds = POItems.map((POItem) => POItem.itemId);
+  const items = await getItemsByIds(db, itemIds);
 
-  const updatedItems = items.map((item) => {
-    if (priceCurrency === "YUAN") {
-      return {
-        itemId: item.itemId,
-        quantity: item.quantity,
-        costYuan: item.itemCost,
-        costIdr: item.itemCost * yuanToIdrRate,
-        unit: item.unit,
-      };
-    } else {
-      return {
-        itemId: item.itemId,
-        quantity: item.quantity,
-        costYuan: item.itemCost * idrToYuanRate,
-        costIdr: item.itemCost,
-        unit: item.unit,
-      };
-    }
+  const updatedPOItems = POItems.map((POItem) => {
+    const item = items.find((i) => i.id === POItem.itemId)!;
+
+    const isIdr = priceCurrency === "IDR";
+    const POItemCostIdr = isIdr
+      ? POItem.itemCost
+      : POItem.itemCost * yuanToIdrRate;
+    const POItemCostYuan = isIdr
+      ? POItem.itemCost * idrToYuanRate
+      : POItem.itemCost;
+
+    return {
+      itemId: POItem.itemId,
+      itemName: item.name,
+      itemCategory: item.category,
+      quantity: POItem.quantity,
+      costYuan: POItemCostYuan,
+      costIdr: POItemCostIdr,
+      unit: POItem.unit,
+    };
   });
 
   await updatePOById(db, {
@@ -293,6 +303,6 @@ export const editPOByPOId = async (
     supplierId,
     tax,
     discount,
-    items: updatedItems,
+    POItems: updatedPOItems,
   });
 };

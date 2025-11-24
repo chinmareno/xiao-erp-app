@@ -1,61 +1,53 @@
-import { z } from "zod";
+import { ItemCategory } from "@prisma/client";
 import { repositoryErrorLogger } from "~/lib/logger/repositoryErrorLogger";
-import { editPOSchema } from "~/schemas/purchasing/PO";
 import { DBClientType } from "~/types/DBClientType";
 
-type CreatePOWithItemsType = {
-  PONumber: string;
-  discountTotal: string;
-  grandTotal: string;
-  subTotal: string;
-  taxTotal: string;
-  priceCurrency: "IDR" | "YUAN";
-  customerName: string;
+type POItemType = {
+  itemId: string;
+  itemName: string;
+  itemCategory: ItemCategory;
+  quantity: number;
+  costYuan: number;
+  costIdr: number;
+  unit: string;
+};
+
+type POSupplierType = {
   supplierName: string;
-  customerAddress: string;
-  customerContactName: string;
   supplierAdress: string;
   supplierContactId: string;
   supplierContactName: string;
   supplierContactPhone: string | null;
   supplierContactEmail: string | null;
+  supplierId: string;
+};
+
+type POCustomerType = {
+  customerName: string;
+  customerAddress: string;
+  customerContactName: string;
   customerContactEmail: string;
   customerContactPhone: string;
-  supplierId: string;
-  tax: number;
+};
+
+type POType = {
+  PONumber: string;
   discount: number;
+  discountTotal: string;
+  grandTotal: string;
+  subTotal: string;
+  tax: number;
+  taxTotal: string;
+  priceCurrency: "IDR" | "YUAN";
+  POItems: POItemType[];
+} & POCustomerType &
+  POSupplierType;
+
+type CreatePOWithItemsType = {
   companyId: string;
+} & POType;
 
-  items: {
-    itemId: string;
-    quantity: number;
-    costYuan: number;
-    costIdr: number;
-    unit: string;
-  }[];
-};
-
-type UpdatePOByIdType = Omit<
-  z.infer<typeof editPOSchema>,
-  "items" | "tax" | "discount"
-> & {
-  customerName: string;
-  supplierName: string;
-  customerAddress: string;
-  supplierAdress: string;
-  supplierContactName: string;
-  supplierContactPhone: string | null;
-  supplierContactEmail: string | null;
-  tax: number;
-  discount: number;
-  items: {
-    itemId: string;
-    quantity: number;
-    costYuan: number;
-    costIdr: number;
-    unit: string;
-  }[];
-};
+type UpdatePOByIdType = { POId: string } & Omit<POType, "PONumber">;
 
 export const createPOWithItems = async (
   db: DBClientType,
@@ -81,7 +73,7 @@ export const createPOWithItems = async (
     tax,
     discount,
     companyId,
-    items,
+    POItems,
   }: CreatePOWithItemsType
 ) => {
   try {
@@ -108,8 +100,8 @@ export const createPOWithItems = async (
         tax,
         discount,
         companyId,
-        items: {
-          createMany: { data: items },
+        POItems: {
+          createMany: { data: POItems },
         },
       },
     });
@@ -177,7 +169,7 @@ export const getPOById = async (
     const PO = await db.purchaseOrder.findUnique({
       where: { id: poId, companyId },
       include: {
-        items: { include: { item: true } },
+        POItems: { include: { item: true } },
       },
     });
 
@@ -278,7 +270,7 @@ export const updatePOById = async (
     supplierContactName,
     supplierContactPhone,
     supplierContactEmail,
-    items,
+    POItems,
   }: UpdatePOByIdType
 ) => {
   try {
@@ -305,9 +297,9 @@ export const updatePOById = async (
         tax,
         discount,
 
-        items: {
+        POItems: {
           deleteMany: {},
-          createMany: { data: items },
+          createMany: { data: POItems },
         },
       },
     });

@@ -78,19 +78,34 @@ export const getItemByIdAndSupplierId = async (
   }
 };
 
-export const getItemByCompanyId = async (
+export const getItemsByCompanyId = async (
   db: DBClientType,
   companyId: string
 ) => {
   try {
-    const item = await db.item.findMany({
+    const items = await db.item.findMany({
       where: { companyId },
     });
 
-    return item;
+    return items;
   } catch (error) {
     repositoryErrorLogger({
-      method: "getItemByCompanyId",
+      method: "getItemsByCompanyId",
+      error,
+    });
+    throw error;
+  }
+};
+export const getItemsByIds = async (db: DBClientType, itemIds: string[]) => {
+  try {
+    const items = await db.item.findMany({
+      where: { id: { in: itemIds } },
+    });
+
+    return items;
+  } catch (error) {
+    repositoryErrorLogger({
+      method: "getItemsByIds",
       error,
     });
     throw error;
