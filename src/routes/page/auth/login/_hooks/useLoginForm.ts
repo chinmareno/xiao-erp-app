@@ -1,4 +1,4 @@
-import { NavigateFunction } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -22,7 +22,9 @@ export const useLoginForm = () => {
   const [isCredentialLoading, setIsCredentialLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const login = async (navigate: NavigateFunction) => {
+  const navigate = useNavigate();
+
+  const login = async () => {
     if (isCredentialLoading) return;
     const result = loginSchema.safeParse({ email, password });
 

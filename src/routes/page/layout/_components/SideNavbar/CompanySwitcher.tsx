@@ -14,7 +14,7 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Link, useNavigate } from "@remix-run/react";
-import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+import { useSelectedCompanyStore } from "~/hooks/common/useSelectedCompanyStore";
 import { Company } from "@prisma/client";
 
 export function CompanySwitcher({
@@ -28,7 +28,7 @@ export function CompanySwitcher({
 
   const navigate = useNavigate();
 
-  const { company, setCompany } = useCompanyStore();
+  const { selectedCompany, setSelectedCompany } = useSelectedCompanyStore();
 
   return (
     <SidebarMenu>
@@ -42,10 +42,10 @@ export function CompanySwitcher({
               <Building />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {company?.name ?? "No Company Yet"}
+                  {selectedCompany?.name ?? "No Company Yet"}
                 </span>
                 <span className="truncate text-xs">
-                  {company?.industry ?? "N/A"}
+                  {selectedCompany?.industry ?? "N/A"}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
@@ -66,7 +66,7 @@ export function CompanySwitcher({
                 <DropdownMenuItem
                   key={company.id}
                   onClick={() => {
-                    setCompany(company);
+                    setSelectedCompany(company);
                     navigate(company.id);
                   }}
                   className="gap-2 p-2"

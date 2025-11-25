@@ -1,7 +1,7 @@
-import { Form, useNavigate, useRouteLoaderData } from "@remix-run/react";
+import { Form, useRouteLoaderData } from "@remix-run/react";
 import { Card, CardContent } from "~/components/ui/card";
 import type { loader as localesLoader } from "~/root";
-import { useLoginForm } from "./_hooks/useLogin";
+import { useLoginForm } from "./_hooks/useLoginForm";
 import { GoogleAuthButton } from "../_components/GoogleAuthButton";
 import AuthSeparator from "../_components/AuthSeparator";
 import EmailInput from "../_components/EmailInput";
@@ -14,8 +14,6 @@ import TnCFooter from "../_components/TnCFooter";
 export default function LoginForm() {
   const t = useRouteLoaderData<typeof localesLoader>("root");
   const scopedT = t?.auth;
-
-  const navigate = useNavigate();
 
   const {
     email,
@@ -39,7 +37,7 @@ export default function LoginForm() {
           subTitle={scopedT?.login.desc || "Login to your account"}
         />
         <CardContent className="space-y-4">
-          <Form replace onSubmit={() => login(navigate)} className="space-y-4">
+          <Form replace onSubmit={login} className="space-y-4">
             <div className="grid gap-6">
               <GoogleAuthButton
                 signupGoogle={signupGoogle}

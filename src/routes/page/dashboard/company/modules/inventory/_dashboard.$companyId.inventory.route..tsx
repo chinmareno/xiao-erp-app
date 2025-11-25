@@ -1,6 +1,6 @@
 import { Outlet, useRouteLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
-import { CompanyIdLoader } from "../../_dashboard.$companyId.route";
+import { CompanyIdLoader } from "../../layout/_dashboard.$companyId.route";
 
 export default function DashboardPurchasingLayout() {
   const companyLoaderData = useRouteLoaderData<CompanyIdLoader>(

@@ -1,7 +1,7 @@
 import { useRouteLoaderData } from "@remix-run/react";
 import { Input } from "~/components/ui/input";
 import type { loader as createPoLoaderType } from "../_dashboard.$companyId.purchasing.PO_.create.route";
-import { CompanyIdLoader } from "~/routes/dashboard/company/_dashboard.$companyId.route";
+import { CompanyIdLoader } from "~/routes/page/dashboard/company/layout/_dashboard.$companyId.route";
 
 type Props = {
   loaderData: Awaited<ReturnType<typeof createPoLoaderType>>;

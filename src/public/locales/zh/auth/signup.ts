@@ -3,6 +3,10 @@ export const signup = {
   desc: "注册以开始使用",
   emailLabel: "电子邮箱",
   emailPlaceholder: "请输入你的电子邮箱",
+  OTPLabel: "输入验证码",
+  OTPPlaceholder: "6位验证码",
+  wait: "请稍候",
+  sendOtp: "发送验证码",
   passwordLabel: "密码",
   passwordPlaceholder: "请输入你的密码",
   confirmPasswordLabel: "确认密码",
@@ -26,5 +30,6 @@ export const signup = {
     invalidPassword: "密码不符合要求。",
     invalidConfirmPassword: "两次密码不一致。",
     uncaughtError: "发生意外错误，请稍后再试。",
+    otpError: "验证码无效",
   },
 };

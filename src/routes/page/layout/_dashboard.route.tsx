@@ -23,9 +23,9 @@ import { SideNavbar } from "./_components/SideNavbar";
 import { createCallerWithContext } from "~/server/api/root.server";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { useInviteLinkTokenStore } from "~/hooks/useInviteLinkTokenStore";
+import { useInviteLinkTokenStore } from "~/hooks/common/useInviteLinkTokenStore";
 import { Company, User } from "@prisma/client";
-import { useOpenDialogNavbarStore } from "~/hooks/useOpenDialogNavbarStore";
+import { useOpenDialogNavbarStore } from "~/hooks/common/useOpenDialogNavbarStore";
 import { createTRPCContext } from "~/server/api/trpc.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

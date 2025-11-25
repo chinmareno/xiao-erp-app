@@ -16,6 +16,7 @@ export const useInviteLinkTokenStore = create<InviteLinkTokenStore>()(
     }),
     {
       name: "invite-link-token",
+      // Session storage to persist invite link token when user reload the page
       storage: createJSONStorage(() => sessionStorage),
     }
   )

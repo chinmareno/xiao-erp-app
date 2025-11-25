@@ -1,6 +1,7 @@
 import { DataTable } from "~/components/Table/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { useNavigate } from "@remix-run/react";
+import { ItemCategoryType } from "~/types/ItemCategoryType";
 
 export type Product = {
   itemId: string;

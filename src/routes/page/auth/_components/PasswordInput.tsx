@@ -3,7 +3,7 @@ import { SetStateAction } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 
-type Props = {
+export type PasswordInputProps = {
   id?: string;
   label: string | undefined;
   placeholder: string | undefined;
@@ -23,7 +23,7 @@ const PasswordInput = ({
   passwordIsVisible,
   setPasswordIsVisible,
   errorMessage,
-}: Props) => {
+}: PasswordInputProps) => {
   return (
     <div className="grid gap-2">
       <Label htmlFor={id || "password"}>{label || "Password"}</Label>
@@ -48,7 +48,7 @@ const PasswordInput = ({
       </div>
       {errorMessage && (
         <p className="lg:text-sm text-red-600">
-          {errorMessage || "Password must be at least 8 characters"}
+          {errorMessage || "Password Invalid"}
         </p>
       )}
     </div>

@@ -1,15 +1,4 @@
-import {
-  Form,
-  Link,
-  useActionData,
-  useNavigate,
-  useRouteLoaderData,
-  useSubmit,
-} from "@remix-run/react";
-import { Check, Dot, Eye, EyeClosed, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { z } from "zod";
-import { Button } from "~/components/ui/button";
+import { Form } from "@remix-run/react";
 import {
   Card,
   CardContent,
@@ -17,11 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { authClient } from "~/lib/auth/auth-client";
-import type { loader as localesLoader } from "~/root";
-import { toast } from "sonner";
 import { ActionFunctionArgs } from "@remix-run/node";
 import { formDataParser } from "~/lib/formDataParser";
 import { auth } from "~/lib/auth/auth.server";
@@ -31,6 +15,12 @@ import TnCFooter from "../_components/TnCFooter";
 import AuthFooter from "../_components/AuthFooter";
 import SubmitAuthButton from "../_components/SubmitAuthButton";
 import PasswordInput from "../_components/PasswordInput";
+import PasswordRequirementCheck from "./_components/PasswordRequirementCheck";
+import { ConfirmPasswordInput } from "./_components/ConfirmPassword";
+import { OTPInput } from "./_components/OTPInput";
+import EmailInput from "../_components/EmailInput";
+import { useTranslation } from "~/hooks/common/useTranslation";
+import { useSignupForm } from "./_hooks/useSignupForm";
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = (await formDataParser(request)) as {
@@ -51,157 +41,36 @@ export async function action({ request }: ActionFunctionArgs) {
     },
     headers: request.headers,
   });
+
   return { email: formData.email, password: formData.password };
 }
 
-const signupSchema = z
-  .object({
-    email: z.string().email(),
-    password: z
-      .string()
-      .min(8)
-      .max(128)
-      .refine((val) => /[A-Z]/.test(val))
-      .refine((val) => /[a-z]/.test(val))
-      .refine((val) => /\d/.test(val)),
-    confirmPassword: z.string(),
-    OTP: z.string().min(6).max(6),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-  });
-
-type SignupError = {
-  email: boolean;
-  password: boolean;
-  confirmPassword: boolean;
-  OTP: boolean;
-};
-
 export default function SignupForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordIsVisible, setPasswordIsVisible] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [confirnPasswordIsVisible, setConfirmPasswordIsVisible] =
-    useState(false);
-  const [errors, setErrors] = useState<SignupError | null>(null);
-  const [sendOTPCooldown, setSendOTPCooldown] = useState(0);
-  const [isSendingOTP, setIsSendingOTP] = useState(false);
-  const [OTP, setOTP] = useState("");
-  const [isCredentialLoading, setIsCredentialLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const {
+    OTP,
+    setOTP,
+    sendOTPCooldown,
+    isSendingOTP,
+    handleSendOTP,
+    signup,
+    isCredentialLoading,
+    signupGoogle,
+    isGoogleLoading,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    passwordIsVisible,
+    setPasswordIsVisible,
+    confirmPassword,
+    setConfirmPassword,
+    confirmPasswordIsVisible,
+    setConfirmPasswordIsVisible,
+    errors,
+  } = useSignupForm();
 
-  const actionData = useActionData<typeof action>();
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (actionData) {
-      authClient.signIn.email({
-        email,
-        password,
-        fetchOptions: { onSuccess: () => navigate("/") },
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actionData]);
-
-  const t = useRouteLoaderData<typeof localesLoader>("root");
+  const t = useTranslation();
   const scopedT = t?.auth;
-
-  const submit = useSubmit();
-
-  const signup = async () => {
-    const result = signupSchema.safeParse({
-      email,
-      password,
-      confirmPassword,
-      OTP,
-    });
-
-    if (!result.success) {
-      const {
-        email: emailError,
-        password: passwordError,
-        confirmPassword: confirmPasswordError,
-        OTP: OTPError,
-      } = result.error.format();
-
-      return setErrors({
-        email: !!emailError,
-        password: !!passwordError,
-        confirmPassword: !!confirmPasswordError,
-        OTP: !!OTPError,
-      });
-    }
-    setErrors(null);
-
-    const name = email.split("@")[0];
-
-    setIsCredentialLoading(true);
-    const { error } = await authClient.emailOtp.verifyEmail({
-      email,
-      otp: OTP,
-    });
-    if (error && error?.message === "Invalid OTP")
-      toast.error("Wrong OTP. Please try again.");
-    // case: first time signup with credentials
-    else if (error && error?.message === "User not found") {
-      await authClient.signUp.email({
-        email,
-        name,
-        password,
-        fetchOptions: {
-          onSuccess: () => navigate("/"),
-          onError: (e) => {
-            toast.error(e.error.message);
-          },
-        },
-      });
-    } else if (error && error.message) return toast.error(error.message);
-    // case: first time signup with social provider, so now u link the credential via forget password approach
-    else {
-      const formData = new FormData();
-      formData.append("password", password);
-      formData.append("email", email);
-      submit(formData, { method: "post" });
-    }
-    setIsCredentialLoading(false);
-  };
-
-  const handleSendOTP = async () => {
-    setIsSendingOTP(true);
-    const { error } = await authClient.emailOtp.sendVerificationOtp({
-      type: "email-verification",
-      email,
-    });
-    setIsSendingOTP(false);
-    if (error) return toast.error(error.message);
-
-    toast.success("OTP sent! Please check your email.");
-
-    setSendOTPCooldown(60);
-  };
-
-  const signupGoogle = async () => {
-    setIsGoogleLoading(true);
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/",
-      errorCallbackURL: "/signup",
-    });
-  };
-
-  useEffect(() => {
-    if (sendOTPCooldown > 0) {
-      const timer = setTimeout(
-        () => setSendOTPCooldown(sendOTPCooldown - 1),
-        1000
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [sendOTPCooldown]);
 
   return (
     <div className="min-w-[400px] min-h-[700px]">
@@ -224,138 +93,81 @@ export default function SignupForm() {
               <AuthSeparator label={scopedT?.signup.separator || "or"} />
 
               <div className="grid gap-2">
-                <Label htmlFor="email">{scopedT?.signup.emailLabel}</Label>
-                <Input
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.currentTarget.value)}
-                  type="text"
+                <EmailInput
+                  label={scopedT?.signup.emailLabel}
+                  email={email}
+                  setEmail={setEmail}
                   placeholder={scopedT?.signup.emailPlaceholder}
+                  errorMessage={
+                    errors?.email
+                      ? scopedT?.signup.error.invalidEmail
+                      : undefined
+                  }
                 />
-                {errors?.email && (
-                  <p className="text-sm text-red-600">
-                    {scopedT?.signup.error.invalidEmail}
-                  </p>
-                )}
-                <div className="grid gap-2">
-                  <Label htmlFor="OTP">Enter OTP</Label>
-                  <div className="relative ">
-                    <Input
-                      id="OTP"
-                      type="text"
-                      onChange={(e) => setOTP(e.currentTarget.value)}
-                      value={OTP}
-                      className="font-semibold"
-                      placeholder="6-digit code"
-                      maxLength={6}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={handleSendOTP}
-                      disabled={
-                        sendOTPCooldown > 0 ||
-                        isSendingOTP ||
-                        !z.string().email().safeParse(email).success
-                      }
-                      className="absolute z-50 right-0 bottom-0"
-                    >
-                      {isSendingOTP ? (
-                        <Loader2 className="animate-spin h-4 w-4" />
-                      ) : sendOTPCooldown > 0 ? (
-                        `Wait ${sendOTPCooldown}s`
-                      ) : (
-                        "Send OTP"
-                      )}
-                    </Button>
-                  </div>
-                  {errors?.OTP && (
-                    <p className="text-sm text-red-600">Invalid OTP</p>
-                  )}
-                </div>
+
+                <OTPInput
+                  label={scopedT?.signup.OTPLabel}
+                  placeholder={scopedT?.signup.OTPPlaceholder}
+                  sendOtp={scopedT?.signup.sendOtp}
+                  wait={scopedT?.signup.wait}
+                  OTP={OTP}
+                  setOTP={setOTP}
+                  handleSendOTP={handleSendOTP}
+                  sendOTPCooldown={sendOTPCooldown}
+                  email={email}
+                  isSendingOTP={isSendingOTP}
+                  errorMessage={
+                    errors?.OTP ? scopedT?.signup.error.otpError : undefined
+                  }
+                />
 
                 <div className="grid gap-2">
-                  <Label htmlFor="password">
-                    {scopedT?.signup.passwordLabel}
-                  </Label>
-                  <div className="relative flex">
-                    <Input
-                      id="password"
-                      onChange={(e) => setPassword(e.currentTarget.value)}
-                      value={password}
-                      type={passwordIsVisible ? "text" : "password"}
-                      placeholder={scopedT?.signup.passwordPlaceholder}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setPasswordIsVisible((prev) => !prev)}
-                    >
-                      {passwordIsVisible ? (
-                        <EyeClosed className="absolute h-5 w-5 right-2 self-center" />
-                      ) : (
-                        <Eye className="absolute h-5 w-5 right-2 self-center" />
-                      )}
-                    </button>
-                  </div>
-                  {errors?.password && (
-                    <p className="lg:text-sm text-red-600">
-                      {scopedT?.signup.error.invalidPassword}
-                    </p>
-                  )}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      {/[a-z]/.test(password) ? (
-                        <Check className="lg:h-4 lg:w-4 text-green-600" />
-                      ) : (
-                        <Dot className="lg:h-4 lg:w-4" />
-                      )}
-                      <p className="lg:text-sm">
-                        {scopedT?.signup.passwordRequirement.oneUpperCase}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/[A-Z]/.test(password) ? (
-                        <Check className="lg:h-4 lg:w-4 text-green-600" />
-                      ) : (
-                        <Dot className="lg:h-4 lg:w-4" />
-                      )}
-                      <p className="text-sm">
-                        {scopedT?.signup.passwordRequirement.oneLowerCase}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/\d/.test(password) ? (
-                        <Check className="lg:h-4 lg:w-4 text-green-600" />
-                      ) : (
-                        <Dot className="lg:h-4 lg:w-4" />
-                      )}
-                      <p className="text-sm">
-                        {scopedT?.signup.passwordRequirement.includeNumber}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {password.length >= 8 ? (
-                        <Check className="lg:h-4 lg:w-4 text-green-600" />
-                      ) : (
-                        <Dot className="lg:h-4 lg:w-4" />
-                      )}
-                      <p className="lg:text-sm">
-                        {scopedT?.signup.passwordRequirement.minChar}
-                      </p>
-                    </div>
-                  </div>
+                  <PasswordInput
+                    label={scopedT?.signup.passwordLabel || "Password"}
+                    password={password}
+                    setPassword={setPassword}
+                    passwordIsVisible={passwordIsVisible}
+                    setPasswordIsVisible={setPasswordIsVisible}
+                    placeholder={
+                      scopedT?.signup.passwordPlaceholder ||
+                      "Enter your password"
+                    }
+                    errorMessage={
+                      errors?.password
+                        ? scopedT?.signup.error.invalidPassword
+                        : undefined
+                    }
+                  />
+                  <PasswordRequirementCheck
+                    password={password}
+                    includeNumber={
+                      scopedT?.signup.passwordRequirement.includeNumber ||
+                      "Includes a number"
+                    }
+                    minChar={
+                      scopedT?.signup.passwordRequirement.minChar ||
+                      "8 characters minimum"
+                    }
+                    oneLowerCase={
+                      scopedT?.signup.passwordRequirement.oneLowerCase ||
+                      "One lowercase character"
+                    }
+                    oneUpperCase={
+                      scopedT?.signup.passwordRequirement.oneUpperCase ||
+                      "One uppercase character"
+                    }
+                  />
                 </div>
-                <PasswordInput
-                  id="confirmPassword"
-                  label={
-                    scopedT?.signup.confirmPasswordLabel || "Confirm Password"
-                  }
+
+                <ConfirmPasswordInput
+                  label={scopedT?.signup.confirmPasswordLabel}
                   password={confirmPassword}
                   setPassword={setConfirmPassword}
-                  passwordIsVisible={confirnPasswordIsVisible}
+                  passwordIsVisible={confirmPasswordIsVisible}
                   setPasswordIsVisible={setConfirmPasswordIsVisible}
                   placeholder={
-                    scopedT?.signup.confirmPasswordLabel || "Confirm password"
+                    scopedT?.signup.confirmPasswordPlaceholder ||
+                    "Confirm password"
                   }
                   errorMessage={
                     errors?.confirmPassword

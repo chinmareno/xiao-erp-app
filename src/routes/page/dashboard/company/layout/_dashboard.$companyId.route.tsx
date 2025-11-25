@@ -2,7 +2,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
 import { createCallerWithContext } from "~/server/api/root.server";
-import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
+import { useSelectedCompanyStore } from "~/hooks/common/useSelectedCompanyStore";
 
 export type CompanyIdLoader = typeof loader;
 
@@ -23,11 +23,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { userCompanyMember, userSelectedCompany };
 }
 export default function DashboardCompanyIdLayout() {
-  const { setCompany, setPermissions } = useCompanyStore();
+  const { setSelectedCompany, setPermissions } = useSelectedCompanyStore();
   const loaderData = useLoaderData<typeof loader>();
 
   useEffect(() => {
-    setCompany(loaderData.userSelectedCompany);
+    setSelectedCompany(loaderData.userSelectedCompany);
     setPermissions(loaderData.userCompanyMember.permissions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaderData]);

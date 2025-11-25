@@ -6,11 +6,11 @@ import { columns as poColumns } from "./_components/SupplierPODataTable/columns"
 import { DataTable as PODataTable } from "./_components/SupplierPODataTable/data-table";
 import { createCallerWithContext } from "~/server/api/root.server";
 import { Button } from "~/components/ui/button";
-import { useSupplierDetailStore } from "~/hooks/useSupplierDetailStore";
-import { usePOStatusFilterStore } from "~/hooks/usePOStatusFilterStore";
+import { useSupplierDetailStore } from "~/hooks/supplier/useSupplierDetailStore";
+import { usePOStatusFilterStore } from "~/hooks/supplier/usePOStatusFilterStore";
 import { Label } from "~/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { useSupplierPOStore } from "~/hooks/useSupplierPOStore";
+import { useSupplierPOStore } from "~/hooks/supplier/useSupplierPOStore";
 import { Plus } from "lucide-react";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

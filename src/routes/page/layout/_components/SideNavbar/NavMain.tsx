@@ -16,8 +16,8 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "~/components/ui/sidebar";
-import { useCompanyStore } from "~/hooks/useSelectedCompanyStore";
-import { useOpenDialogNavbarStore } from "~/hooks/useOpenDialogNavbarStore";
+import { useSelectedCompanyStore } from "~/hooks/common/useSelectedCompanyStore";
+import { useOpenDialogNavbarStore } from "~/hooks/common/useOpenDialogNavbarStore";
 import { MODULES_SUBMODULES } from "~/constants/companyModules";
 
 const modulesIcon = {
@@ -27,24 +27,24 @@ const modulesIcon = {
 };
 
 export function NavMain() {
-  const { company, permissions } = useCompanyStore();
+  const { selectedCompany, permissions } = useSelectedCompanyStore();
   const navigate = useNavigate();
   const { openDialog } = useOpenDialogNavbarStore();
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>
-        {company === null
+        {selectedCompany === null
           ? null
-          : company?.modules && (permissions?.length ?? 0) > 0
+          : selectedCompany?.modules && (permissions?.length ?? 0) > 0
           ? "Modules"
           : "No Permissions yet"}
       </SidebarGroupLabel>
       <SidebarMenu>
         {permissions &&
           permissions.map((module, index) => {
-            if (!company) return null;
-            return company.modules.includes(module) ? (
+            if (!selectedCompany) return null;
+            return selectedCompany.modules.includes(module) ? (
               <Collapsible
                 key={module}
                 asChild
@@ -53,19 +53,24 @@ export function NavMain() {
               >
                 <SidebarMenuItem>
                   {!openDialog ? (
+                    // Collapsed sidebar: Show only icon, and navigate to first submodule when clicked
                     <SidebarMenuButton
                       tooltip={module}
                       onClick={() => {
                         navigate(
-                          `${company.id}/${module.toLocaleLowerCase()}/${
+                          `${
+                            selectedCompany.id
+                          }/${module.toLocaleLowerCase()}/${
                             MODULES_SUBMODULES[module][0]
                           }`
                         );
                       }}
                     >
                       {modulesIcon[module]}
+                      sas
                     </SidebarMenuButton>
                   ) : (
+                    // Expanded sidebar: Show icon & text, and toggle show/hide submodules when clicked
                     <CollapsibleTrigger disabled={!openDialog} asChild>
                       <SidebarMenuButton tooltip={module}>
                         {modulesIcon[module]}
@@ -82,7 +87,7 @@ export function NavMain() {
                           <SidebarMenuSubButton asChild>
                             <Link
                               to={`${
-                                company.id
+                                selectedCompany.id
                               }/${module.toLocaleLowerCase()}/${submodule}`}
                             >
                               <span className="capitalize">{submodule}</span>

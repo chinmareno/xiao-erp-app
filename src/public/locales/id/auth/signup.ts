@@ -3,6 +3,10 @@ export const signup = {
   desc: "Daftar untuk memulai",
   emailLabel: "Email",
   emailPlaceholder: "Masukkan email Anda",
+  OTPLabel: "Masukan OTP",
+  OTPPlaceholder: "6 digit kode",
+  wait: "Tunggu",
+  sendOtp: "Kirim OTP",
   passwordLabel: "Kata Sandi",
   passwordPlaceholder: "Masukkan kata sandi Anda",
   confirmPasswordLabel: "Konfirmasi Kata Sandi",
@@ -26,5 +30,6 @@ export const signup = {
     invalidPassword: "Kata sandi tidak memenuhi syarat.",
     invalidConfirmPassword: "Kata sandi tidak sama.",
     uncaughtError: "Terjadi kesalahan tak terduga. Silakan coba lagi nanti.",
+    otpError: "OTP tidak valid",
   },
 };

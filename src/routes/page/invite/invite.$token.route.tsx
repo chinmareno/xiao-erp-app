@@ -5,7 +5,7 @@ import { createCallerWithContext } from "~/server/api/root.server";
 import { TRPCError } from "@trpc/server";
 import { auth } from "~/lib/auth/auth.server";
 import { useEffect } from "react";
-import { useInviteLinkTokenStore } from "~/hooks/useInviteLinkTokenStore";
+import { useInviteLinkTokenStore } from "~/hooks/common/useInviteLinkTokenStore";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
