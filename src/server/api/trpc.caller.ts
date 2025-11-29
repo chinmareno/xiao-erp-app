@@ -1,5 +1,5 @@
-import { appRouter } from "./routers/index.server";
-import { createCallerFactory, createTRPCContext } from "./trpc.server";
+import { appRouter } from "./routers";
+import { createCallerFactory, createTRPCContext } from "./trpc";
 import { ZodError } from "zod";
 
 export const createCaller = createCallerFactory(appRouter);

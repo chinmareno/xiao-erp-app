@@ -4,6 +4,7 @@ type RepositoryErrorLoggerType = {
   logType?: "warn" | "error";
 };
 
+// TODO: use a proper logging library
 export const repositoryErrorLogger = ({
   method,
   error,

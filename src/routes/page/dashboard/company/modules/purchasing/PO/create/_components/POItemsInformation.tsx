@@ -50,7 +50,7 @@ export const POItemsInformation = ({
         supplierId: selectedSupplierId,
         companyId: params.companyId as string,
       },
-      { action: "/api/getSupplierProductsBySupplierId", method: "POST" }
+      { action: "/api/getSupplierProductsBySupplierId", method: "GET" }
     );
   }, [selectedSupplierId]);
 

@@ -1,5 +1,5 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import {
   useFetcher,
   useLoaderData,

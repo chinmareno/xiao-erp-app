@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import AddButton from "~/components/AddButton";
 import TableTitle from "~/components/Table/TableTitle";
 import { ProductTable } from "./_components/ProductTable";

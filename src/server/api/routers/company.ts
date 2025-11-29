@@ -4,7 +4,7 @@ import {
   ownerProcedure,
   protectedProcedure,
   superAdminProcedure,
-} from "../trpc.server";
+} from "../trpc";
 import {
   findAllCompanies,
   findCompaniesByUserId,

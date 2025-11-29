@@ -1,4 +1,4 @@
-import { createTRPCRouter, inventoryProcedure } from "../../trpc.server";
+import { createTRPCRouter, inventoryProcedure } from "../../trpc";
 import { z } from "zod";
 
 export const warehouseRouter = createTRPCRouter({

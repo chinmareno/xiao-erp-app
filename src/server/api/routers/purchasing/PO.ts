@@ -1,5 +1,5 @@
 import { createPOSchema, editPOSchema } from "~/schemas/purchasing/PO";
-import { createTRPCRouter, purchasingProcedure } from "../../trpc.server";
+import { createTRPCRouter, purchasingProcedure } from "../../trpc";
 import { z } from "zod";
 import {
   changePONumberFormatPrefix,

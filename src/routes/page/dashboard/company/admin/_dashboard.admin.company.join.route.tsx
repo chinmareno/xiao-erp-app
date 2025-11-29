@@ -3,7 +3,7 @@ import InputWithLabel from "~/components/InputWithLabel";
 import { ActionFunctionArgs, redirect } from "@remix-run/node";
 import { z } from "zod";
 import { formDataParser } from "~/lib/formDataParser";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { TRPCError } from "@trpc/server";
 
 const joinSchema = z.object({

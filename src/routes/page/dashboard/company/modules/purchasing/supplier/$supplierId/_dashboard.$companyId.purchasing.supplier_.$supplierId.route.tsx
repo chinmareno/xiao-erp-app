@@ -4,7 +4,7 @@ import { columns as productColumns } from "./_components/SupplierProductDataTabl
 import { DataTable as ProductDataTable } from "./_components/SupplierProductDataTable/data-table";
 import { columns as poColumns } from "./_components/SupplierPODataTable/columns";
 import { DataTable as PODataTable } from "./_components/SupplierPODataTable/data-table";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { Button } from "~/components/ui/button";
 import { useSupplierDetailStore } from "~/hooks/supplier/useSupplierDetailStore";
 import { usePOStatusFilterStore } from "~/hooks/supplier/usePOStatusFilterStore";

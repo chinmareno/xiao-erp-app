@@ -1,4 +1,4 @@
-import { createTRPCRouter } from "../../trpc.server";
+import { createTRPCRouter } from "../../trpc";
 import { warehouseRouter } from "./warehouse";
 
 export const inventoryRouter = createTRPCRouter({

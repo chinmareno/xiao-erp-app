@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, purchasingProcedure } from "../../trpc.server";
+import { createTRPCRouter, purchasingProcedure } from "../../trpc";
 import {
   createSupplierProductSchema,
   editPriceSupplierProductBySupplierIdAndItemIdSchema,

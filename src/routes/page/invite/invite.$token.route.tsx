@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { TRPCError } from "@trpc/server";
 import { auth } from "~/lib/auth/auth.server";
 import { useEffect } from "react";
@@ -49,8 +49,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 }
-
-// TODO: Cron job to delete expired invite links
 
 export default function Invite() {
   const loaderData = useLoaderData<typeof loader>();

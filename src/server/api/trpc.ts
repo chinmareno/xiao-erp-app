@@ -1,19 +1,20 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { db } from "~/lib/db.server";
 import { ZodError } from "zod";
 import { auth } from "~/lib/auth/auth.server";
+import { db } from "../db";
+import { verifyCompanyMember } from "./helper/verifyCompanyMember";
 
 export async function createTRPCContext(req: Request, companyId?: string) {
   const session = await auth.api.getSession({ headers: req.headers });
-  const role: "SUPERADMIN" | "USER" =
+  const isSuperAdmin =
     session?.user.emailVerified &&
-    session?.user.email === process.env.SUPER_ADMIN_EMAIL
-      ? "SUPERADMIN"
-      : "USER";
+    session?.user.email === process.env.SUPER_ADMIN_EMAIL;
+
+  const role: "USER" | "SUPERADMIN" = isSuperAdmin ? "SUPERADMIN" : "USER";
 
   return {
     db,
-    session: session,
+    session,
     role,
     req,
     companyId,
@@ -44,10 +45,7 @@ export const createTRPCRouter = t.router;
 
 export const publicProcedure = t.procedure.use(({ ctx, next }) => {
   return next({
-    ctx: {
-      session: ctx.session,
-      role: ctx.role,
-    },
+    ctx,
   });
 });
 
@@ -67,13 +65,19 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   });
 });
 
-export const companyMemberProcedure = t.procedure.use(({ ctx, next }) => {
+export const companyMemberProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.session || !ctx.companyId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "You are not authorized",
     });
   }
+
+  await verifyCompanyMember({
+    db: ctx.db,
+    companyId: ctx.companyId,
+    userId: ctx.session.user.id,
+  });
 
   return next({
     ctx: {
@@ -92,31 +96,23 @@ export const purchasingProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
 
-  const isMember = await ctx.db.companyMember.findUnique({
-    where: {
-      userId_companyId: {
-        userId: ctx.session.user.id,
-        companyId: ctx.companyId,
-      },
-    },
-    select: { permissions: true, role: true },
+  const companyMember = await verifyCompanyMember({
+    db: ctx.db,
+    companyId: ctx.companyId,
+    userId: ctx.session.user.id,
   });
 
   const isSuperAdmin = ctx.role === "SUPERADMIN";
-  const isOwner = isMember?.role === "OWNER";
+  const isOwner = companyMember.role === "OWNER";
 
-  if ((isMember && isSuperAdmin) || (isMember && isOwner)) {
-    return next({
-      ctx: {
-        session: ctx.session,
-        role: ctx.role,
-        companyId: ctx.companyId,
-      },
-    });
-  } else if (!isMember || !isMember.permissions.includes("PURCHASING")) {
+  if (
+    !isSuperAdmin &&
+    !isOwner &&
+    !companyMember.permissions.includes("PURCHASING")
+  ) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "You are not a member of this company",
+      message: "You don't have permission to access purchasing",
     });
   }
 
@@ -136,32 +132,23 @@ export const inventoryProcedure = t.procedure.use(async ({ ctx, next }) => {
       message: "You are not authorized",
     });
   }
-
-  const isMember = await ctx.db.companyMember.findUnique({
-    where: {
-      userId_companyId: {
-        userId: ctx.session.user.id,
-        companyId: ctx.companyId,
-      },
-    },
-    select: { permissions: true, role: true },
+  const companyMember = await verifyCompanyMember({
+    db: ctx.db,
+    companyId: ctx.companyId,
+    userId: ctx.session.user.id,
   });
 
   const isSuperAdmin = ctx.role === "SUPERADMIN";
-  const isOwner = isMember?.role === "OWNER";
+  const isOwner = companyMember.role === "OWNER";
 
-  if ((isMember && isSuperAdmin) || (isMember && isOwner)) {
-    return next({
-      ctx: {
-        session: ctx.session,
-        role: ctx.role,
-        companyId: ctx.companyId,
-      },
-    });
-  } else if (!isMember || !isMember.permissions.includes("INVENTORY")) {
+  if (
+    !isSuperAdmin &&
+    !isOwner &&
+    !companyMember.permissions.includes("INVENTORY")
+  ) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "You are not a member of this company",
+      message: "You don't have permission to access inventory",
     });
   }
 
@@ -175,26 +162,20 @@ export const inventoryProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 export const ownerProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const companyId = ctx.companyId;
-
-  if (!ctx.session || !companyId) {
+  if (!ctx.session || !ctx.companyId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "Unauthorized",
     });
   }
 
-  const isOwner = await ctx.db.companyMember.findUnique({
-    where: {
-      userId_companyId: {
-        userId: ctx.session.user.id,
-        companyId,
-      },
-    },
-    select: { role: true },
+  const companyMember = await verifyCompanyMember({
+    db: ctx.db,
+    companyId: ctx.companyId,
+    userId: ctx.session.user.id,
   });
 
-  if (!isOwner || isOwner.role !== "OWNER") {
+  if (companyMember.role !== "OWNER") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You must be the owner of this company",
@@ -218,7 +199,8 @@ export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
     });
   }
 
-  if (ctx.role !== "SUPERADMIN" && !process.env.DEMO_MODE) {
+  // Allow access in demo mode to automatically create and join as owner in a company
+  if (!process.env.DEMO_MODE && ctx.role !== "SUPERADMIN") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You are not SUPERADMIN",
@@ -231,4 +213,16 @@ export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
       role: ctx.role,
     },
   });
+});
+
+export const cronProcedure = t.procedure.use(({ next, ctx }) => {
+  // TODO: Set secret in gitaction req header
+  const cronSecret = ctx.req.headers.get("x-cron-secret");
+  if (cronSecret !== process.env.CRON_SECRET) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Only cron can access this endpoint",
+    });
+  }
+  return next();
 });

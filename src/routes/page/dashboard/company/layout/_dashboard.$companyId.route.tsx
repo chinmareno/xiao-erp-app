@@ -1,15 +1,16 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { useSelectedCompanyStore } from "~/hooks/common/useSelectedCompanyStore";
 
 export type CompanyIdLoader = typeof loader;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;
-  if (companyId == "favicon.ico")
+  if (companyId === "favicon.ico") {
     throw new Response("Not Found", { status: 404 });
+  }
 
   const caller = await createCallerWithContext(request, companyId);
 

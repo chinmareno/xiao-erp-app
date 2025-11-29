@@ -10,8 +10,10 @@ import {
 import { formDataParser } from "~/lib/formDataParser";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { CompanyIdLoader } from "../layout/_dashboard.$companyId.route";
+import { useTRPC } from "~/lib/trpc/trpc";
+import { useQuery } from "@tanstack/react-query";
 
 const InviteMemberSchema = z.object({
   companyId: z.string().min(1, "Company ID is required"),
@@ -59,7 +61,8 @@ export default function DashboardIndex() {
     await navigator.clipboard.writeText(actionData);
     setCopied(true);
   };
-
+  const t = useTRPC();
+  const q = useQuery(t.test.checkaja.queryOptions());
   return (
     <section className="px-6 py-12 max-w-5xl mx-auto">
       <div className="rounded-3xl border bg-background shadow-xl p-10 sm:p-14">

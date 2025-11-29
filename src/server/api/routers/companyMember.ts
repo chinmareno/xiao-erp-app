@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   superAdminProcedure,
-} from "../trpc.server";
+} from "../trpc";
 import {
   findCompanyMemberByUserIdAndCompanyId,
   joinCompanyByCompanyId,

@@ -6,12 +6,12 @@ import {
 import { useActionData, Form, useLoaderData } from "@remix-run/react";
 import { auth } from "~/lib/auth/auth.server";
 import { formDataParser } from "~/lib/formDataParser";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import InputWithLabel from "~/components/InputWithLabel";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { createCompanySchema } from "~/schemas/company";
-import CompanyList from "../_components/CompanyList";
+import { CompanyList } from "./_components/CompanyList";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await auth.api.getSession({ headers: request.headers });

@@ -1,5 +1,5 @@
 import { ActionFunctionArgs } from "@remix-run/node";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { formDataParser } from "~/lib/formDataParser";
 
 export async function action({ request }: ActionFunctionArgs) {

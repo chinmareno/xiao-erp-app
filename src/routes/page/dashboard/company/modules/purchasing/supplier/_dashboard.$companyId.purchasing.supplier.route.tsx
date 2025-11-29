@@ -3,7 +3,7 @@ import { columns } from "./_components/columns";
 import { DataTable } from "./_components/data-table";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Plus } from "lucide-react";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import TableTitle from "~/components/Table/TableTitle";
 
 export type SupplierLoaderData = Awaited<ReturnType<typeof loader>>;

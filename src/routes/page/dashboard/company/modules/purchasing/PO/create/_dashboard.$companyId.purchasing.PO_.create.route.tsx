@@ -11,7 +11,7 @@ import {
   useLoaderData,
   useParams,
 } from "@remix-run/react";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 

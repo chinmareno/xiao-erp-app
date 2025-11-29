@@ -2,7 +2,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { DataTable } from "./_components/data-table";
 import { columns } from "./_components/columns";
-import { createCallerWithContext } from "~/server/api/root.server";
+import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { z } from "zod";
 import { formDataParser } from "~/lib/formDataParser";
 import { PriceCurrency } from "@prisma/client";
