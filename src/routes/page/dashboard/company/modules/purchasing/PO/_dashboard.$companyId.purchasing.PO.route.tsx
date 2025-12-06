@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
-import { usePOStatusFilterStore } from "~/hooks/supplier/usePOStatusFilterStore";
+import { usePOStatusFilterStore } from "~/hooks/stores/supplier/usePOStatusFilterStore";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;

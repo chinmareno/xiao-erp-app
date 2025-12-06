@@ -23,10 +23,12 @@ import { SideNavbar } from "./_components/SideNavbar";
 import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { useInviteLinkTokenStore } from "~/hooks/common/useInviteLinkTokenStore";
+import { useInviteLinkTokenStore } from "~/hooks/stores/useInviteLinkTokenStore";
 import { Company, User } from "@prisma/client";
-import { useOpenDialogNavbarStore } from "~/hooks/common/useOpenDialogNavbarStore";
+import { useOpenDialogNavbarStore } from "~/hooks/stores/useOpenDialogNavbarStore";
 import { createTRPCContext } from "~/server/api/trpc";
+import { Role, useUserStore } from "~/hooks/stores/useUserStore";
+import { useCompanyStore } from "~/hooks/stores/useCompanyStore";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await auth.api.getSession({
@@ -38,9 +40,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const caller = await createCallerWithContext(request);
 
-  const companies = await caller.company.getByUserId();
+  let companies = await caller.company.getByUserId();
 
-  const role = (await createTRPCContext(request)).role;
+  const { role } = await createTRPCContext(request);
 
   if (process.env.DEMO_MODE && companies.length === 0) {
     await caller.company.create({
@@ -49,18 +51,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       industry: "Technology",
       desc: "A demonstration company for testing and showcasing platform features.",
     });
-    const companies = await caller.company.getByUserId();
-
-    return { user, companies, role };
+    companies = await caller.company.getByUserId();
   }
 
-  return { user, companies, role };
+  return { user: { ...user, role }, companies };
 }
 
 export type DashboardLoader = {
   user: User;
   companies: Company[];
-  role: "SUPERADMIN" | "USER";
+  role: Role;
 };
 
 export default function DashboardLayout() {
@@ -73,8 +73,21 @@ export default function DashboardLayout() {
 
   const navigate = useNavigate();
   const { openDialog, setOpenDialog } = useOpenDialogNavbarStore();
+  const { setUser } = useUserStore();
+  const { setCompanies, selectedCompany, setSelectedCompany } =
+    useCompanyStore();
+  useEffect(() => {
+    setUser(loaderData.user);
+
+    setCompanies(loaderData.companies);
+
+    if (!selectedCompany) {
+      setSelectedCompany(loaderData.companies[0]);
+    }
+  }, [loaderData]);
 
   useEffect(() => {
+    // Show welcome toast if the user was created within the last 5 seconds
     const userCreatedAt = new Date(loaderData.user.createdAt);
     const now = new Date();
     const diffInSeconds = Math.abs(
@@ -99,11 +112,7 @@ export default function DashboardLayout() {
 
   return (
     <SidebarProvider open={openDialog} onOpenChange={setOpenDialog}>
-      <SideNavbar
-        role={loaderData.role}
-        user={loaderData.user}
-        companies={loaderData.companies}
-      />
+      <SideNavbar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -127,7 +136,7 @@ export default function DashboardLayout() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div>
-            <Outlet context={loaderData.role} />
+            <Outlet />
           </div>
         </div>
       </SidebarInset>

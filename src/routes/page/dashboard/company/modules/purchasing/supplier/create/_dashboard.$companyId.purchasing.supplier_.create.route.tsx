@@ -4,6 +4,7 @@ import {
   Form,
   Link,
   useActionData,
+  useParams,
 } from "@remix-run/react";
 import InputWithLabel from "~/components/InputWithLabel";
 import { Button } from "~/components/ui/button";
@@ -129,6 +130,9 @@ const CONTACT_INPUT_CLASSNAME = " my-2";
 export default function PurchasingSupplierCreate() {
   const actionData = useActionData<typeof action>();
 
+  const params = useParams();
+  const companyId = params.companyId as string;
+
   const errors = actionData?.errors;
 
   return (
@@ -218,7 +222,7 @@ export default function PurchasingSupplierCreate() {
 
       <div className="mt-14 col-span-2 flex justify-end gap-4">
         <Link
-          to="/your-supplier-list-path"
+          to={`/${companyId}/purchasing/supplier`}
           className="inline-flex items-center justify-center rounded-md border border-input px-6 py-2 text-sm font-medium shadow-sm hover:bg-muted"
         >
           Cancel

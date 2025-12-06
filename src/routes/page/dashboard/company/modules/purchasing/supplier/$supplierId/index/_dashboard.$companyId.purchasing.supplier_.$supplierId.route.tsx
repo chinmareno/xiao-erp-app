@@ -1,17 +1,16 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
-import { columns as productColumns } from "./_components/SupplierProductDataTable/columns";
-import { DataTable as ProductDataTable } from "./_components/SupplierProductDataTable/data-table";
-import { columns as poColumns } from "./_components/SupplierPODataTable/columns";
-import { DataTable as PODataTable } from "./_components/SupplierPODataTable/data-table";
 import { createCallerWithContext } from "~/server/api/trpc.caller";
 import { Button } from "~/components/ui/button";
-import { useSupplierDetailStore } from "~/hooks/supplier/useSupplierDetailStore";
-import { usePOStatusFilterStore } from "~/hooks/supplier/usePOStatusFilterStore";
+import { useSupplierDetailStore } from "~/hooks/stores/supplier/useSupplierDetailStore";
+import { usePOStatusFilterStore } from "~/hooks/stores/supplier/usePOStatusFilterStore";
 import { Label } from "~/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { useSupplierPOStore } from "~/hooks/supplier/useSupplierPOStore";
+import { useSupplierPOStore } from "~/hooks/stores/supplier/useSupplierPOStore";
 import { Plus } from "lucide-react";
+import { SupplierPOTable } from "./_components/SupplierPOTable";
+import { SupplierProductTable } from "./_components/SupplierProductTable";
+import { SupplierPORadio } from "./_components/SupplierPORadio";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const supplierId = params.supplierId as string;
@@ -99,37 +98,17 @@ export default function SupplierDetail() {
               <span>Add Product</span>
             </Button>
           </div>
-          <ProductDataTable columns={productColumns} data={supplierProducts} />
+
+          <SupplierProductTable data={supplierProducts} />
         </div>
       ) : (
         <div>
           <div className="flex">
-            <RadioGroup className="mb-4" defaultValue={selectedStatus}>
-              <div className="flex items-center gap-3">
-                <RadioGroupItem
-                  onClick={() => setSelectedStatus("unreceived")}
-                  value="unreceived"
-                  id="unreceived"
-                />
-                <Label htmlFor="unreceived">Unreceivable</Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <RadioGroupItem
-                  onClick={() => setSelectedStatus("received")}
-                  value="received"
-                  id="received"
-                />
-                <Label htmlFor="received">Received</Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <RadioGroupItem
-                  onClick={() => setSelectedStatus("inactive")}
-                  value="inactive"
-                  id="inactive"
-                />
-                <Label htmlFor="inactive">Inactive</Label>
-              </div>
-            </RadioGroup>
+            <SupplierPORadio
+              selectedStatus={selectedStatus}
+              setSelectedStatus={setSelectedStatus}
+            />
+
             <Button
               className="mb-4 ml-auto self-end inline-flex items-center gap-2 rounded-md bg-blue-600 py-0 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
               onClick={() => {
@@ -141,7 +120,8 @@ export default function SupplierDetail() {
               <span>Add PO</span>
             </Button>
           </div>
-          <PODataTable columns={poColumns} data={filteredPOs} />
+
+          <SupplierPOTable data={filteredPOs} />
         </div>
       )}
     </div>

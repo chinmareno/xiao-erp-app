@@ -22,7 +22,7 @@ import { CustomerInformation } from "./_components/CustomerInformation";
 import { POHeader } from "./_components/POHeader";
 import { ChangePONumberPrefix } from "./_components/ChangePONumberPrefix";
 import { Item, POItemsInformation } from "./_components/POItemsInformation";
-import { useSupplierPOStore } from "~/hooks/supplier/useSupplierPOStore";
+import { useSupplierPOStore } from "~/hooks/stores/supplier/useSupplierPOStore";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const companyId = params.companyId as string;

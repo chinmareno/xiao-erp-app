@@ -100,6 +100,12 @@ export const SupplierInformation = ({
   };
 
   useEffect(() => {
+    if (selectedSupplierId) {
+      handleSupplierChange(selectedSupplierId);
+    }
+  }, [selectedSupplierId]);
+
+  useEffect(() => {
     if (selectedSupplier?.id && fetcher.state === "idle") {
       if (fetcher.data !== null) {
         const { errors } = fetcher.data as {
@@ -141,7 +147,6 @@ export const SupplierInformation = ({
             value={selectedSupplierId || undefined}
             onValueChange={(value) => {
               setSelectedSupplierId(value);
-              handleSupplierChange(value);
             }}
             name="supplierId"
             required

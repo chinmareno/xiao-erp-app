@@ -27,14 +27,12 @@ import {
 import defaultAvatar from "~/public/default_profile.png";
 
 import { authClient } from "~/lib/auth/auth-client";
-import { useRouteLoaderData } from "@remix-run/react";
-import { DashboardLoader } from "../../_dashboard.route";
+import { useUserStore } from "~/hooks/stores/useUserStore";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
 
-  const loaderData = useRouteLoaderData<DashboardLoader>("_dashboard");
-
+  const { user } = useUserStore();
   const handleLogout = async () => {
     await authClient.signOut({
       fetchOptions: {
@@ -57,17 +55,13 @@ export function NavUser() {
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
                   referrerPolicy="no-referrer"
-                  src={loaderData?.user.image ?? defaultAvatar}
-                  alt={loaderData?.user.name ?? "avatar"}
+                  src={user?.image ?? defaultAvatar}
+                  alt={user?.name ?? "avatar"}
                 />
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">
-                  {loaderData?.user?.name}
-                </span>
-                <span className="truncate text-xs">
-                  {loaderData?.user?.email}
-                </span>
+                <span className="truncate font-semibold">{user?.name}</span>
+                <span className="truncate text-xs">{user?.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -83,42 +77,16 @@ export function NavUser() {
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage
                     referrerPolicy="no-referrer"
-                    src={loaderData?.user.image ?? defaultAvatar}
-                    alt={loaderData?.user.name ?? "avatar"}
+                    src={user?.image ?? defaultAvatar}
+                    alt={user?.name ?? "avatar"}
                   />
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">
-                    {loaderData?.user?.name}
-                  </span>
-                  <span className="truncate text-xs">
-                    {loaderData?.user?.email}
-                  </span>
+                  <span className="truncate font-semibold">{user?.name}</span>
+                  <span className="truncate text-xs">{user?.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />

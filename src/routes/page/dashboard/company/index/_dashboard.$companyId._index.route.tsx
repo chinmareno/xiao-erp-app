@@ -11,9 +11,9 @@ import { formDataParser } from "~/lib/formDataParser";
 import { z } from "zod";
 import { useEffect, useState } from "react";
 import { createCallerWithContext } from "~/server/api/trpc.caller";
-import { CompanyIdLoader } from "../layout/_dashboard.$companyId.route";
+import { useCompanyStore } from "~/hooks/stores/useCompanyStore";
 import { useTRPC } from "~/lib/trpc/trpc";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 const InviteMemberSchema = z.object({
   companyId: z.string().min(1, "Company ID is required"),
@@ -28,22 +28,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DashboardIndex() {
-  const companyLoaderData = useRouteLoaderData<CompanyIdLoader>(
-    "_dashboard.$companyId"
-  );
-
+  const { selectedCompany } = useCompanyStore();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
 
   const [copied, setCopied] = useState(false);
 
+  const [inviteLinkExpiredAt, setInviteLinkExpiredAt] = useState<Date | null>(
+    null
+  );
+
   const handleInviteMember = () => {
-    if (!companyLoaderData) return;
+    if (!selectedCompany) return;
+
+    if (inviteLinkExpiredAt) {
+      const now = new Date();
+      if (now < inviteLinkExpiredAt) {
+        return;
+      }
+    }
 
     const formData = new FormData();
-    formData.append("companyId", companyLoaderData.userSelectedCompany.id);
+    formData.append("companyId", selectedCompany?.id);
     submit(formData, { method: "post", replace: true });
     setCopied(false);
+
+    const expiresAt = new Date();
+    const expirationMinutes = 5;
+    expiresAt.setMinutes(expiresAt.getMinutes() + expirationMinutes);
+    setInviteLinkExpiredAt(expiresAt);
   };
 
   useEffect(() => {
@@ -61,13 +74,12 @@ export default function DashboardIndex() {
     await navigator.clipboard.writeText(actionData);
     setCopied(true);
   };
-  const t = useTRPC();
-  const q = useQuery(t.test.checkaja.queryOptions());
+
   return (
     <section className="px-6 py-12 max-w-5xl mx-auto">
       <div className="rounded-3xl border bg-background shadow-xl p-10 sm:p-14">
         <h2 className="text-3xl font-extrabold mb-6 text-primary">
-          {companyLoaderData?.userSelectedCompany.name}
+          {selectedCompany?.name}
         </h2>
 
         <div className="space-y-4 text-base text-muted-foreground">
@@ -75,23 +87,21 @@ export default function DashboardIndex() {
             <span className="block text-sm font-semibold text-foreground mb-1">
               Industry
             </span>
-            {companyLoaderData?.userSelectedCompany.industry ||
-              "No industry specified"}
+            {selectedCompany?.industry || "No industry specified"}
           </p>
 
           <p>
             <span className="block text-sm font-semibold text-foreground mb-1">
               Description
             </span>
-            {companyLoaderData?.userSelectedCompany.desc ||
-              "No description provided"}
+            {selectedCompany?.desc || "No description provided"}
           </p>
 
           <p>
             <span className="block text-sm font-semibold text-foreground mb-1">
               Address
             </span>
-            {companyLoaderData?.userSelectedCompany.address || "N/A"}
+            {selectedCompany?.address || "N/A"}
           </p>
         </div>
       </div>
@@ -133,7 +143,7 @@ export default function DashboardIndex() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 ml-1">
-                  Link expires in 5 minutes
+                  Link expired in 5 minutes
                 </p>
               </>
             ) : (

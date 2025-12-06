@@ -18,11 +18,7 @@ import { Toaster } from "./components/ui/sonner";
 import icon from "./public/favicon.ico";
 import NotFound from "./routes/page/not-found/$.route";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "./server/api/routers";
-import { TRPCProvider } from "./lib/trpc/trpc";
-import { z } from "zod";
+import { makeQueryClient } from "./lib/query-client";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -45,17 +41,6 @@ export async function loader() {
 
 export type localesLoader = typeof loader;
 
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        // With SSR, we usually want to set some default staleTime
-        // above 0 to avoid refetching immediately on the client
-        staleTime: 60 * 1000,
-      },
-    },
-  });
-}
 let browserQueryClient: QueryClient | undefined = undefined;
 function getQueryClient() {
   if (typeof window === "undefined") {
@@ -92,34 +77,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const queryClient = getQueryClient();
-  const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
-      links: [
-        httpBatchLink({
-          url: "/api/trpc",
-          headers() {
-            const url = window.location.pathname;
-            const firstSubUrl = String(url).split("/")[1];
-            const { data: companyId, error } = z
-              .string()
-              .cuid()
-              .safeParse(firstSubUrl);
-            return { "X-Company-Id": companyId };
-          },
-        }),
-      ],
-    })
-  );
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        <Outlet />
-      </TRPCProvider>
+      <Outlet />
     </QueryClientProvider>
   );
 }
 
+// TODO: Refactor
 export function ErrorBoundary() {
   const error = useRouteError();
 

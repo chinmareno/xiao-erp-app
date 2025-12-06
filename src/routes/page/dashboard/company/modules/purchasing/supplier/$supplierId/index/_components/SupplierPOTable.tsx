@@ -1,9 +1,11 @@
-import { $Enums } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
+import { PurchaseOrderStatus } from "@prisma/client";
+import { DataTable } from "~/components/Table/DataTable";
+import { useNavigate, useParams } from "@remix-run/react";
 
-export type SupplierPO = {
+type SupplierPO = {
   id: string;
-  status: $Enums.PurchaseOrderStatus;
+  status: PurchaseOrderStatus;
   createdAt: Date;
   updatedAt: Date;
   companyId: string;
@@ -17,7 +19,28 @@ export type SupplierPO = {
   grandTotal: string;
 };
 
-export const columns: ColumnDef<SupplierPO>[] = [
+type Props = {
+  data: SupplierPO[];
+};
+
+export const SupplierPOTable = ({ data }: Props) => {
+  const navigate = useNavigate();
+
+  const params = useParams();
+  const companyId = params.companyId as string;
+
+  return (
+    <DataTable
+      data={data}
+      columns={columns}
+      onRowClick={(supplierPO) =>
+        navigate(`/${companyId}/purchasing/PO/${supplierPO.id}`)
+      }
+    />
+  );
+};
+
+const columns: ColumnDef<SupplierPO>[] = [
   {
     id: "no",
     header: "No.",

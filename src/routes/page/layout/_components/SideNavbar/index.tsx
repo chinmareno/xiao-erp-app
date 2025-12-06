@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import {
   Sidebar,
   SidebarContent,
@@ -10,36 +8,12 @@ import {
 import { NavUser } from "./NavUser";
 import { CompanySwitcher } from "./CompanySwitcher";
 import { NavMain } from "./NavMain";
-import { Company } from "@prisma/client";
 
-type User = {
-  name: string;
-  email: string;
-  image?: string | null;
-};
-
-type Module = {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  submodules: {
-    title: string;
-    url: string;
-  }[];
-};
-
-type SideNavbarProps = React.ComponentProps<typeof Sidebar> & {
-  user: User;
-  companies: Company[];
-  modules?: Module[];
-  role: "SUPERADMIN" | "USER";
-};
-
-export function SideNavbar({ ...props }: SideNavbarProps) {
+export function SideNavbar() {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
-        <CompanySwitcher role={props.role} companies={props.companies} />
+        <CompanySwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain />

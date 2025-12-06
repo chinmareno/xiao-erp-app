@@ -4,6 +4,7 @@ import { ColumnDef, type Row } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { DataTable } from "~/components/Table/DataTable";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-export type SupplierProduct = {
+type SupplierProduct = {
   id: string;
   itemName: string;
   price: number;
@@ -35,7 +36,15 @@ export type SupplierProduct = {
   updatedAt: Date;
 };
 
-export const columns: ColumnDef<SupplierProduct>[] = [
+type Props = {
+  data: SupplierProduct[];
+};
+
+export const SupplierProductTable = ({ data }: Props) => {
+  return <DataTable columns={columns} data={data} />;
+};
+
+const columns: ColumnDef<SupplierProduct>[] = [
   {
     id: "no",
     header: "No.",

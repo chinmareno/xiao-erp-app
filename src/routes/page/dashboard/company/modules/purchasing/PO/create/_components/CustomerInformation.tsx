@@ -21,7 +21,7 @@ export const CustomerInformation = ({ loaderData }: Props) => {
         <div className="p-3 border-r border-gray-300">
           <div className="text-xs text-gray-600 mb-1">CUSTOMER NAME</div>
           <div className="text-sm bg-white py-2 pl-2">
-            {companyLoaderData?.userSelectedCompany?.name || "Loading..."}
+            {companyLoaderData?.company?.name || "Loading..."}
           </div>
         </div>
         <div className="p-3">
@@ -41,7 +41,7 @@ export const CustomerInformation = ({ loaderData }: Props) => {
       <div className="p-3 border-b border-gray-300">
         <div className="text-xs text-gray-600 mb-1">ADDRESS</div>
         <div className="text-sm bg-white py-3 pl-2">
-          {companyLoaderData?.userSelectedCompany?.address || "Loading..."}
+          {companyLoaderData?.company?.address || "Loading..."}
         </div>
       </div>
       <div className="grid grid-cols-2">

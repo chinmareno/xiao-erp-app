@@ -19,7 +19,7 @@ import PasswordRequirementCheck from "./_components/PasswordRequirementCheck";
 import { ConfirmPasswordInput } from "./_components/ConfirmPassword";
 import { OTPInput } from "./_components/OTPInput";
 import EmailInput from "../_components/EmailInput";
-import { useTranslation } from "~/hooks/common/useTranslation";
+import { useTranslation } from "~/hooks/useTranslation";
 import { useSignupForm } from "./_hooks/useSignupForm";
 
 export async function action({ request }: ActionFunctionArgs) {

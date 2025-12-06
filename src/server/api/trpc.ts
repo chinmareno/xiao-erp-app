@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { auth } from "~/lib/auth/auth.server";
 import { db } from "../db";
 import { verifyCompanyMember } from "./helper/verifyCompanyMember";
+import superjson from "superjson";
 
 export async function createTRPCContext(req: Request, companyId?: string) {
   const session = await auth.api.getSession({ headers: req.headers });
@@ -37,6 +38,7 @@ const t = initTRPC.context<Context>().create({
       },
     };
   },
+  transformer: superjson,
 });
 
 export const createCallerFactory = t.createCallerFactory;

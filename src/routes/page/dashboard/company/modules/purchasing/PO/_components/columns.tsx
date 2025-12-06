@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { type PurchaseOrderStatus } from "@prisma/client";
 
-type PO = {
+export type PO = {
   supplierTaxId: string | null;
   companyId: string;
   id: string;

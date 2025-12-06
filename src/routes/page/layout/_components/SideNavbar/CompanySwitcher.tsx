@@ -14,22 +14,15 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Link, useNavigate } from "@remix-run/react";
-import { useSelectedCompanyStore } from "~/hooks/common/useSelectedCompanyStore";
-import { Company } from "@prisma/client";
+import { useCompanyStore } from "~/hooks/stores/useCompanyStore";
+import { useUserStore } from "~/hooks/stores/useUserStore";
 
-export function CompanySwitcher({
-  companies,
-  role,
-}: {
-  companies: Company[];
-  role: "SUPERADMIN" | "USER";
-}) {
+export const CompanySwitcher = () => {
   const { isMobile } = useSidebar();
 
   const navigate = useNavigate();
-
-  const { selectedCompany, setSelectedCompany } = useSelectedCompanyStore();
-
+  const { selectedCompany, companies } = useCompanyStore();
+  const { user } = useUserStore();
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -66,8 +59,9 @@ export function CompanySwitcher({
                 <DropdownMenuItem
                   key={company.id}
                   onClick={() => {
-                    setSelectedCompany(company);
-                    navigate(company.id);
+                    if (selectedCompany?.id !== company.id) {
+                      navigate(company.id);
+                    }
                   }}
                   className="gap-2 p-2"
                 >
@@ -80,7 +74,7 @@ export function CompanySwitcher({
               </div>
             )}
 
-            {role === "SUPERADMIN" && (
+            {user?.role === "SUPERADMIN" && (
               <>
                 <DropdownMenuItem asChild className="gap-2 p-2">
                   <Link to="/admin/company/join">
@@ -110,4 +104,4 @@ export function CompanySwitcher({
       </SidebarMenuItem>
     </SidebarMenu>
   );
-}
+};

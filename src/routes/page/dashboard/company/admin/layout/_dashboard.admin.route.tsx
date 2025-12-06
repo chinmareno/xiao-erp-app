@@ -1,10 +1,11 @@
-import { Outlet, useOutletContext } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
 import { useEffect } from "react";
+import { useUserStore } from "~/hooks/stores/useUserStore";
 
 export default function DashboardAdminLayout() {
-  const outletContext = useOutletContext<"USER" | "SUPERADMIN">();
+  const { user } = useUserStore();
   useEffect(() => {
-    if (outletContext === "USER") throw new Error("Not Found");
-  }, [outletContext]);
-  return outletContext === "SUPERADMIN" && <Outlet />;
+    if (user?.role === "USER") throw new Error("Not Found");
+  }, [user]);
+  return user?.role === "SUPERADMIN" && <Outlet />;
 }
