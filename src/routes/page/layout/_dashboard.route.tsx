@@ -76,6 +76,7 @@ export default function DashboardLayout() {
   const { setUser } = useUserStore();
   const { setCompanies, selectedCompany, setSelectedCompany } =
     useCompanyStore();
+    
   useEffect(() => {
     setUser(loaderData.user);
 
