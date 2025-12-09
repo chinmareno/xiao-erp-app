@@ -5,8 +5,7 @@
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
-    "**/.client/**/*.tsx",
-    "app/bootstrap.yuanIdrRate.ts"
+    "**/.client/**/*.tsx"
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
@@ -15,6 +14,7 @@
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "module": "ESNext",
+    "sourceMap": true,
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "target": "ES2022",
