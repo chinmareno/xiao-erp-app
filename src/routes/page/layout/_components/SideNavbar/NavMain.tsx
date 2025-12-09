@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { ChevronRight, DollarSign, Package, ShoppingCart } from "lucide-react";
 
 import {

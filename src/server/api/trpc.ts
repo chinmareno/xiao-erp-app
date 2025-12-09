@@ -218,13 +218,15 @@ export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
 });
 
 export const cronProcedure = t.procedure.use(({ next, ctx }) => {
-  // TODO: Set secret in gitaction req header
-  const cronSecret = ctx.req.headers.get("x-cron-secret");
-  if (cronSecret !== process.env.CRON_SECRET) {
+  console.log("Cron executed with headers:", ctx.req.headers);
+  if (
+    ctx.req.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "Only cron can access this endpoint",
     });
   }
+
   return next();
 });
