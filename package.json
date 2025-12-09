@@ -6,7 +6,7 @@
   "scripts": {
     "build": "remix vite:build",
     "dev": "remix vite:dev",
-    "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+    "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint",
     "start": "npm run setup && remix-serve ./build/server/index.js",
     "typecheck": "tsc",
     "db-reset": "prisma db push --force-reset",
@@ -57,7 +57,7 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
-    "@remix-run/dev": "^2.16.8",
+    "@remix-run/dev": "^2.16.7",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
