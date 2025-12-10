@@ -47,7 +47,13 @@ export default function InviteLinkConfigDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Config Roles</Button>
+      <Button
+        variant={"outline"}
+        className="w-1/2 text-black mt-1 place-self-center"
+        onClick={() => setOpen(true)}
+      >
+        Config Roles
+      </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

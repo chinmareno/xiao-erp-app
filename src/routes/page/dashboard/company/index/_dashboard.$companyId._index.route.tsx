@@ -153,20 +153,22 @@ export default function DashboardIndex() {
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogDescription className="p-3 py-1">
+            <DialogDescription className="p-3 overflow-hidden py-1 flex flex-col">
               {inviteLink ? (
                 <>
-                  <p className="text-sm ml-2  font-medium text-foreground mb-1">
+                  <p className="text-sm ml-2 font-medium text-foreground mb-1">
                     Invite Link
                   </p>
                   <div
-                    className={`flex w-full border  relative items-center  pl-4 py-3 rounded-lg ${
+                    className={`flex w-full border relative items-center  pl-4 py-3 rounded-lg ${
                       copied
                         ? "bg-green-100/50  border-green-500"
                         : "border-slate-400 bg-muted"
                     }`}
                   >
-                    <span className="truncate text-black">{inviteLink}</span>
+                    <span className="truncate  max-w-[calc(100%-69px)] text-black">
+                      {inviteLink}
+                    </span>
                     <Button
                       size="sm"
                       onClick={handleCopy}
