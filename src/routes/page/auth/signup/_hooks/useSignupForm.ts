@@ -125,7 +125,7 @@ export const useSignupForm = () => {
       email,
     });
     setIsSendingOTP(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error("Too many OTP send. Please try again later.");
 
     toast.success("OTP sent! Please check your email.");
 

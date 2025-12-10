@@ -66,7 +66,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <Toaster visibleToasts={2} expand richColors />
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -80,6 +79,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <Toaster visibleToasts={2} expand richColors />
       <Outlet />
     </QueryClientProvider>
   );

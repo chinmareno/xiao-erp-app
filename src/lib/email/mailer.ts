@@ -1,21 +1,34 @@
 import { VerificationEmailTemplate } from "./VerificationEmailTemplate";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
+import ReactDOMServer from "react-dom/server";
 
 export type SendEmailVerification = {
   otp: string;
   email: string;
 };
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const sendEmailVerification = async ({
   otp,
   email,
 }: SendEmailVerification) => {
-  await resend.emails.send({
-    from: "onboarding@resend.dev",
-    to: email,
-    subject: "Verify your email to start using XiaoERP",
-    react: VerificationEmailTemplate({ otp, email }),
+  const googleEmail = process.env.GOOGLE_APP_EMAIL;
+  const googlePassword = process.env.GOOGLE_APP_PASSWORD;
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: googleEmail,
+      pass: googlePassword,
+    },
+  });
+  const html = ReactDOMServer.renderToStaticMarkup(
+    VerificationEmailTemplate({ otp, email })
+  );
+
+  await transporter.sendMail({
+    from: `Xiao Erp Team <${googleEmail}>`, // sender address
+    to: email, // list of receivers
+    subject: "Signup OTP Verification", // Subject line
+    text: `OTP: ${otp}.If you don't request it, just ignore.`, // plain text body
+    html: html, // html body
   });
 };
