@@ -14,6 +14,7 @@ import {
 } from "~/server/services/company";
 import { z } from "zod";
 import { createCompanySchema } from "~/schemas/company";
+import { CompanyModules } from "@prisma/client";
 
 export const companyRouter = createTRPCRouter({
   create: superAdminProcedure
@@ -57,12 +58,16 @@ export const companyRouter = createTRPCRouter({
     .input(
       z.object({
         companyId: z.string().min(1, "Company ID is required"),
+        permissions: z.nativeEnum(CompanyModules).array().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { companyId } = input;
+      const { companyId, permissions } = input;
 
-      const inviteLink = await generateInviteLink(ctx.db, { companyId });
+      const inviteLink = await generateInviteLink(ctx.db, {
+        companyId,
+        permissions,
+      });
 
       return inviteLink;
     }),

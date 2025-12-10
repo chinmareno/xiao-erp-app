@@ -1,4 +1,4 @@
-import { CompanyRole, PrismaClient } from "@prisma/client";
+import { CompanyModules, CompanyRole, PrismaClient } from "@prisma/client";
 import { nanoid } from "nanoid";
 import {
   createCompany,
@@ -58,7 +58,10 @@ export const findAllCompanies = async (db: PrismaClient) => {
 
 export const generateInviteLink = async (
   db: PrismaClient,
-  { companyId }: { companyId: string }
+  {
+    companyId,
+    permissions,
+  }: { companyId: string; permissions?: CompanyModules[] }
 ) => {
   const token = nanoid(24);
   const EXPIRED_MINUTE = 15;
@@ -68,6 +71,7 @@ export const generateInviteLink = async (
     token,
     companyId,
     expiresAt,
+    permissions,
   });
   const clickableLink = `${process.env.APP_URL}/invite/${inviteLink.token}`;
 

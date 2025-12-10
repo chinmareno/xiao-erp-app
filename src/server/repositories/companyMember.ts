@@ -1,4 +1,4 @@
-import { CompanyRole } from "@prisma/client";
+import { CompanyModules, CompanyRole } from "@prisma/client";
 import { repositoryErrorLogger } from "~/lib/logger/repositoryErrorLogger";
 import { DBClientType } from "~/types/DBClientType";
 
@@ -11,6 +11,7 @@ type CreateCompanyMemberType = {
   userId: string;
   companyId: string;
   role: CompanyRole;
+  permissions?: CompanyModules[];
 };
 
 export const getCompanyMemberByUserIdAndCompanyId = async (
@@ -39,7 +40,7 @@ export const getCompanyMemberByUserIdAndCompanyId = async (
 
 export const createCompanyMember = async (
   db: DBClientType,
-  { userId, companyId, role }: CreateCompanyMemberType
+  { userId, companyId, role, permissions }: CreateCompanyMemberType
 ) => {
   try {
     await db.companyMember.create({
@@ -47,6 +48,7 @@ export const createCompanyMember = async (
         userId,
         companyId,
         role,
+        permissions,
       },
     });
   } catch (error) {

@@ -88,6 +88,7 @@ export const joinCompanyByInviteLink = async (
     userId,
     companyId: inviteLink.companyId,
     role: isSuperAdmin ? "ADMIN" : "EMPLOYEE",
+    permissions: inviteLink.permissions,
   });
 };
 

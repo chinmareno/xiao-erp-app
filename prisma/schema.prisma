@@ -127,7 +127,7 @@ model CompanyMember {
   user   User   @relation(fields: [userId], references: [id])
 
   permissions CompanyModules[]
-
+  
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -161,6 +161,8 @@ model InviteLink {
 
   createdAt DateTime @default(now())
   expiresAt DateTime
+
+  permissions CompanyModules[]
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

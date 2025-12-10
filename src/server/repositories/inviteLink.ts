@@ -1,3 +1,4 @@
+import { CompanyModules } from "@prisma/client";
 import { repositoryErrorLogger } from "~/lib/logger/repositoryErrorLogger";
 import { DBClientType } from "~/types/DBClientType";
 
@@ -5,6 +6,7 @@ type createInviteLinkType = {
   token: string;
   companyId: string;
   expiresAt: Date;
+  permissions?: CompanyModules[];
 };
 
 export const getInviteLinkByToken = async (db: DBClientType, token: string) => {
@@ -36,14 +38,16 @@ export const deleteInviteLinkByToken = async (
 
 export const createInviteLink = async (
   db: DBClientType,
-  { token, companyId, expiresAt }: createInviteLinkType
+  { token, companyId, expiresAt, permissions }: createInviteLinkType
 ) => {
   try {
+    console.log(permissions);
     const inviteLink = await db.inviteLink.create({
       data: {
         token,
         companyId,
         expiresAt,
+        permissions,
       },
     });
 
