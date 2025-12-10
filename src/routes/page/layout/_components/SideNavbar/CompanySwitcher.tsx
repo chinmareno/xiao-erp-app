@@ -58,11 +58,7 @@ export const CompanySwitcher = () => {
               companies.map((company) => (
                 <DropdownMenuItem
                   key={company.id}
-                  onClick={() => {
-                    if (selectedCompany?.id !== company.id) {
-                      navigate(company.id);
-                    }
-                  }}
+                  onClick={() => navigate(company.id)}
                   className="gap-2 p-2"
                 >
                   {company.name}
