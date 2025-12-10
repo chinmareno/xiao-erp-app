@@ -7,16 +7,15 @@ import superjson from "superjson";
 
 export async function createTRPCContext(req: Request, companyId?: string) {
   const session = await auth.api.getSession({ headers: req.headers });
-  const isSuperAdmin =
-    session?.user.emailVerified &&
-    session?.user.email === process.env.SUPER_ADMIN_EMAIL;
-
-  const role: "USER" | "SUPERADMIN" = isSuperAdmin ? "SUPERADMIN" : "USER";
+  const user = await db.user.findUnique({
+    where: { id: session?.user.id },
+    select: { role: true },
+  });
 
   return {
     db,
     session,
-    role,
+    role: user?.role ?? "USER",
     req,
     companyId,
   };
